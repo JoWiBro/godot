@@ -74,6 +74,14 @@ class GodotBody3D : public GodotCollisionObject3D {
 	real_t _inv_mass = 1.0;
 	Vector3 _inv_inertia; // Relative to the principal axes of inertia
 
+	// Surface Velocity
+	bool enable_surface_velocity = false;
+	Vector3 surface_velocity_axis;
+	real_t surface_velocity_value = 0.0;
+
+	// Ether
+	Vector3 ether_velocity;
+
 	// Relative to the local frame of reference
 	Basis principal_inertia_axes_local;
 	Vector3 center_of_mass_local;
