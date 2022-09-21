@@ -181,7 +181,7 @@ public:
 
 	void compute_gravity(const Vector3 &p_position, Vector3 &r_gravity) const;
 
-	void compute_ether_velocity(const Vector3 &p_position, Vector3 &r_ether_velocity) const;
+	void compute_ether(const Vector3 &p_position, Vector3 &r_ether_velocity, real_t &r_ether_density) const;
 
 	GodotArea3D();
 	~GodotArea3D();
