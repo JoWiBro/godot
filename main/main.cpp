@@ -157,6 +157,7 @@ static bool show_help = false;
 static bool auto_quit = false;
 static OS::ProcessID editor_pid = 0;
 #ifdef TOOLS_ENABLED
+static bool found_project = false;
 static bool auto_build_solutions = false;
 static String debug_server_uri;
 static int converter_max_kb_file = 4 * 1024; // 4MB
@@ -707,9 +708,6 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 	Vector<String> breakpoints;
 	bool use_custom_res = true;
 	bool force_res = false;
-#ifdef TOOLS_ENABLED
-	bool found_project = false;
-#endif
 
 	String default_renderer = "";
 	String renderer_hints = "";
@@ -1672,13 +1670,19 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 		if (bool(GLOBAL_GET("display/window/size/borderless"))) {
 			window_flags |= DisplayServer::WINDOW_FLAG_BORDERLESS_BIT;
 		}
-		if (bool(GLOBAL_GET("display/window/size/fullscreen"))) {
-			window_mode = DisplayServer::WINDOW_MODE_FULLSCREEN;
-		}
-
 		if (bool(GLOBAL_GET("display/window/size/always_on_top"))) {
 			window_flags |= DisplayServer::WINDOW_FLAG_ALWAYS_ON_TOP_BIT;
 		}
+		if (bool(GLOBAL_GET("display/window/size/transparent"))) {
+			window_flags |= DisplayServer::WINDOW_FLAG_TRANSPARENT_BIT;
+		}
+		if (bool(GLOBAL_GET("display/window/size/extend_to_title"))) {
+			window_flags |= DisplayServer::WINDOW_FLAG_EXTEND_TO_TITLE_BIT;
+		}
+		if (bool(GLOBAL_GET("display/window/size/no_focus"))) {
+			window_flags |= DisplayServer::WINDOW_FLAG_NO_FOCUS_BIT;
+		}
+		window_mode = (DisplayServer::WindowMode)(GLOBAL_GET("display/window/size/mode").operator int());
 	}
 
 	GLOBAL_DEF_RST("internationalization/rendering/force_right_to_left_layout_direction", false);
@@ -1932,6 +1936,13 @@ Error Main::setup2(Thread::ID p_main_tid_override) {
 #ifdef TOOLS_ENABLED
 	if (editor || project_manager || cmdline_tool) {
 		EditorPaths::create();
+		if (found_project && EditorPaths::get_singleton()->is_self_contained()) {
+			if (ProjectSettings::get_singleton()->get_resource_path() == OS::get_singleton()->get_executable_path().get_base_dir()) {
+				ERR_PRINT("You are trying to run a self-contained editor at the same location as a project. This is not allowed, since editor files will mix with project files.");
+				OS::get_singleton()->set_exit_code(EXIT_FAILURE);
+				return FAILED;
+			}
+		}
 	}
 #endif
 

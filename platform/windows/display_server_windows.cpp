@@ -685,7 +685,13 @@ void DisplayServerWindows::show_window(WindowID p_id) {
 		_update_window_style(p_id);
 	}
 
-	if (wd.no_focus || wd.is_popup) {
+	if (wd.maximized) {
+		ShowWindow(wd.hWnd, SW_SHOWMAXIMIZED);
+		SetForegroundWindow(wd.hWnd); // Slightly higher priority.
+		SetFocus(wd.hWnd); // Set keyboard focus.
+	} else if (wd.minimized) {
+		ShowWindow(wd.hWnd, SW_SHOWMINIMIZED);
+	} else if (wd.no_focus || wd.is_popup) {
 		// https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-showwindow
 		ShowWindow(wd.hWnd, SW_SHOWNA);
 	} else {
@@ -926,7 +932,7 @@ void DisplayServerWindows::window_set_position(const Point2i &p_position, Window
 	ERR_FAIL_COND(!windows.has(p_window));
 	WindowData &wd = windows[p_window];
 
-	if (wd.fullscreen) {
+	if (wd.fullscreen || wd.maximized) {
 		return;
 	}
 
@@ -1059,6 +1065,10 @@ void DisplayServerWindows::window_set_size(const Size2i p_size, WindowID p_windo
 	ERR_FAIL_COND(!windows.has(p_window));
 	WindowData &wd = windows[p_window];
 
+	if (wd.fullscreen || wd.maximized) {
+		return;
+	}
+
 	int w = p_size.width;
 	int h = p_size.height;
 
@@ -1075,10 +1085,6 @@ void DisplayServerWindows::window_set_size(const Size2i p_size, WindowID p_windo
 		gl_manager->window_resize(p_window, w, h);
 	}
 #endif
-
-	if (wd.fullscreen) {
-		return;
-	}
 
 	RECT rect;
 	GetWindowRect(wd.hWnd, &rect);
@@ -3346,7 +3352,7 @@ void DisplayServerWindows::_process_key_events() {
 					k->set_ctrl_pressed(ke.control);
 					k->set_meta_pressed(ke.meta);
 					k->set_pressed(true);
-					k->set_keycode((Key)KeyMappingWindows::get_keysym(ke.wParam));
+					k->set_keycode((Key)KeyMappingWindows::get_keysym(MapVirtualKey((ke.lParam >> 16) & 0xFF, MAPVK_VSC_TO_VK)));
 					k->set_physical_keycode((Key)(KeyMappingWindows::get_scansym((ke.lParam >> 16) & 0xFF, ke.lParam & (1 << 24))));
 					k->set_unicode(unicode);
 					if (k->get_unicode() && gr_mem) {
@@ -3597,6 +3603,16 @@ DisplayServer::WindowID DisplayServerWindows::_create_window(WindowMode p_mode, 
 			}
 		} else {
 			wd.wtctx = 0;
+		}
+
+		if (p_mode == WINDOW_MODE_MAXIMIZED) {
+			wd.maximized = true;
+			wd.minimized = false;
+		}
+
+		if (p_mode == WINDOW_MODE_MINIMIZED) {
+			wd.maximized = false;
+			wd.minimized = true;
 		}
 
 		wd.last_pressure = 0;

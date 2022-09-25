@@ -227,6 +227,7 @@ void ScriptEditorBase::_bind_methods() {
 	// TODO: This signal is no use for VisualScript.
 	ADD_SIGNAL(MethodInfo("search_in_files_requested", PropertyInfo(Variant::STRING, "text")));
 	ADD_SIGNAL(MethodInfo("replace_in_files_requested", PropertyInfo(Variant::STRING, "text")));
+	ADD_SIGNAL(MethodInfo("go_to_method", PropertyInfo(Variant::OBJECT, "script"), PropertyInfo(Variant::STRING, "method")));
 }
 
 class EditorScriptCodeCompletionCache : public ScriptCodeCompletionCache {
@@ -2380,6 +2381,7 @@ bool ScriptEditor::edit(const Ref<Resource> &p_resource, int p_line, int p_col, 
 	se->connect("request_save_history", callable_mp(this, &ScriptEditor::_save_history));
 	se->connect("search_in_files_requested", callable_mp(this, &ScriptEditor::_on_find_in_files_requested));
 	se->connect("replace_in_files_requested", callable_mp(this, &ScriptEditor::_on_replace_in_files_requested));
+	se->connect("go_to_method", callable_mp(this, &ScriptEditor::script_goto_method));
 
 	//test for modification, maybe the script was not edited but was loaded
 
@@ -3059,26 +3061,15 @@ void ScriptEditor::shortcut_input(const Ref<InputEvent> &p_event) {
 	}
 }
 
-void ScriptEditor::_script_list_gui_input(const Ref<InputEvent> &ev) {
-	Ref<InputEventMouseButton> mb = ev;
-	if (mb.is_valid() && mb->is_pressed()) {
-		switch (mb->get_button_index()) {
-			case MouseButton::MIDDLE: {
-				// Right-click selects automatically; middle-click does not.
-				int idx = script_list->get_item_at_position(mb->get_position(), true);
-				if (idx >= 0) {
-					script_list->select(idx);
-					_script_selected(idx);
-					_menu_option(FILE_CLOSE);
-				}
-			} break;
+void ScriptEditor::_script_list_clicked(int p_item, Vector2 p_local_mouse_pos, MouseButton p_mouse_button_index) {
+	if (p_mouse_button_index == MouseButton::MIDDLE) {
+		script_list->select(p_item);
+		_script_selected(p_item);
+		_menu_option(FILE_CLOSE);
+	}
 
-			case MouseButton::RIGHT: {
-				_make_script_list_context_menu();
-			} break;
-			default:
-				break;
-		}
+	if (p_mouse_button_index == MouseButton::RIGHT) {
+		_make_script_list_context_menu();
 	}
 }
 
@@ -3688,7 +3679,7 @@ ScriptEditor::ScriptEditor() {
 	script_list->set_v_size_flags(SIZE_EXPAND_FILL);
 	script_split->set_split_offset(70 * EDSCALE);
 	_sort_list_on_update = true;
-	script_list->connect("gui_input", callable_mp(this, &ScriptEditor::_script_list_gui_input), CONNECT_DEFERRED);
+	script_list->connect("item_clicked", callable_mp(this, &ScriptEditor::_script_list_clicked), CONNECT_DEFERRED);
 	script_list->set_allow_rmb_select(true);
 	script_list->set_drag_forwarding(this);
 
