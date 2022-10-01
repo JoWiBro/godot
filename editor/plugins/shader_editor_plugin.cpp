@@ -385,19 +385,23 @@ static void _complete_include_paths(List<ScriptLanguage::CodeCompletionOption> *
 
 void ShaderTextEditor::_code_complete_script(const String &p_code, List<ScriptLanguage::CodeCompletionOption> *r_options) {
 	List<ScriptLanguage::CodeCompletionOption> pp_options;
+	List<ScriptLanguage::CodeCompletionOption> pp_defines;
 	ShaderPreprocessor preprocessor;
 	String code;
 	complete_from_path = (shader.is_valid() ? shader->get_path() : shader_inc->get_path()).get_base_dir();
 	if (!complete_from_path.ends_with("/")) {
 		complete_from_path += "/";
 	}
-	preprocessor.preprocess(p_code, "", code, nullptr, nullptr, nullptr, nullptr, &pp_options, _complete_include_paths);
+	preprocessor.preprocess(p_code, "", code, nullptr, nullptr, nullptr, nullptr, &pp_options, &pp_defines, _complete_include_paths);
 	complete_from_path = String();
 	if (pp_options.size()) {
 		for (const ScriptLanguage::CodeCompletionOption &E : pp_options) {
 			r_options->push_back(E);
 		}
 		return;
+	}
+	for (const ScriptLanguage::CodeCompletionOption &E : pp_defines) {
+		r_options->push_back(E);
 	}
 
 	ShaderLanguage sl;
@@ -645,17 +649,17 @@ void ShaderEditor::_menu_option(int p_option) {
 		case EDIT_MOVE_LINE_DOWN: {
 			shader_editor->move_lines_down();
 		} break;
-		case EDIT_INDENT_LEFT: {
-			if (shader.is_null()) {
-				return;
-			}
-			shader_editor->get_text_editor()->unindent_lines();
-		} break;
-		case EDIT_INDENT_RIGHT: {
+		case EDIT_INDENT: {
 			if (shader.is_null()) {
 				return;
 			}
 			shader_editor->get_text_editor()->indent_lines();
+		} break;
+		case EDIT_UNINDENT: {
+			if (shader.is_null()) {
+				return;
+			}
+			shader_editor->get_text_editor()->unindent_lines();
 		} break;
 		case EDIT_DELETE_LINE: {
 			shader_editor->delete_lines();
@@ -1035,8 +1039,8 @@ void ShaderEditor::_make_context_menu(bool p_selection, Vector2 p_position) {
 	context_menu->add_shortcut(ED_GET_SHORTCUT("ui_redo"), EDIT_REDO);
 
 	context_menu->add_separator();
-	context_menu->add_shortcut(ED_GET_SHORTCUT("script_text_editor/indent_left"), EDIT_INDENT_LEFT);
-	context_menu->add_shortcut(ED_GET_SHORTCUT("script_text_editor/indent_right"), EDIT_INDENT_RIGHT);
+	context_menu->add_shortcut(ED_GET_SHORTCUT("script_text_editor/indent"), EDIT_INDENT);
+	context_menu->add_shortcut(ED_GET_SHORTCUT("script_text_editor/unindent"), EDIT_UNINDENT);
 	context_menu->add_shortcut(ED_GET_SHORTCUT("script_text_editor/toggle_comment"), EDIT_TOGGLE_COMMENT);
 	context_menu->add_shortcut(ED_GET_SHORTCUT("script_text_editor/toggle_bookmark"), BOOKMARK_TOGGLE);
 
@@ -1097,8 +1101,8 @@ ShaderEditor::ShaderEditor() {
 	edit_menu->get_popup()->add_separator();
 	edit_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("script_text_editor/move_up"), EDIT_MOVE_LINE_UP);
 	edit_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("script_text_editor/move_down"), EDIT_MOVE_LINE_DOWN);
-	edit_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("script_text_editor/indent_left"), EDIT_INDENT_LEFT);
-	edit_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("script_text_editor/indent_right"), EDIT_INDENT_RIGHT);
+	edit_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("script_text_editor/indent"), EDIT_INDENT);
+	edit_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("script_text_editor/unindent"), EDIT_UNINDENT);
 	edit_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("script_text_editor/delete_line"), EDIT_DELETE_LINE);
 	edit_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("script_text_editor/toggle_comment"), EDIT_TOGGLE_COMMENT);
 	edit_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("script_text_editor/duplicate_selection"), EDIT_DUPLICATE_SELECTION);
