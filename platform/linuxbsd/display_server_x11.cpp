@@ -49,10 +49,14 @@
 #include "drivers/gles3/rasterizer_gles3.h"
 #endif
 
+#include <dlfcn.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
@@ -65,17 +69,6 @@
 // EWMH
 #define _NET_WM_STATE_REMOVE 0L // remove/unset property
 #define _NET_WM_STATE_ADD 1L // add/set property
-
-#include <dlfcn.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-
-//stupid linux.h
-#ifdef KEY_TAB
-#undef KEY_TAB
-#endif
 
 #undef CursorShape
 #include <X11/XKBlib.h>
@@ -3141,6 +3134,11 @@ void DisplayServerX11::_window_changed(XEvent *event) {
 	if (wd.x11_window != event->xany.window) { // Check if the correct window, in case it was not main window or anything else
 		return;
 	}
+
+	// Query display server about a possible new window state.
+	wd.fullscreen = _window_fullscreen_check(window_id);
+	wd.minimized = _window_minimize_check(window_id);
+	wd.maximized = _window_maximize_check(window_id, "_NET_WM_STATE");
 
 	{
 		//the position in xconfigure is not useful here, obtain it manually
