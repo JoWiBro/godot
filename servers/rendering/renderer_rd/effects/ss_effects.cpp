@@ -43,7 +43,7 @@ SSEffects *SSEffects::singleton = nullptr;
 static _FORCE_INLINE_ void store_camera(const Projection &p_mtx, float *p_array) {
 	for (int i = 0; i < 4; i++) {
 		for (int j = 0; j < 4; j++) {
-			p_array[i * 4 + j] = p_mtx.matrix[i][j];
+			p_array[i * 4 + j] = p_mtx.columns[i][j];
 		}
 	}
 }
@@ -488,8 +488,8 @@ void SSEffects::downsample_depth(RID p_depth_buffer, const Vector<RID> &p_depth_
 		ss_effects.downsample_uniform_set = RD::get_singleton()->uniform_set_create(uniforms, ss_effects.downsample_shader.version_get_shader(ss_effects.downsample_shader_version, use_full_mips ? 6 : 2), 2);
 	}
 
-	float depth_linearize_mul = -p_projection.matrix[3][2];
-	float depth_linearize_add = p_projection.matrix[2][2];
+	float depth_linearize_mul = -p_projection.columns[3][2];
+	float depth_linearize_add = p_projection.columns[2][2];
 	if (depth_linearize_mul * depth_linearize_add < 0) {
 		depth_linearize_add = -depth_linearize_add;
 	}
@@ -713,8 +713,8 @@ void SSEffects::screen_space_indirect_lighting(SSILRenderBuffers &p_ssil_buffers
 
 		ssil.gather_push_constant.half_screen_pixel_size[0] = 1.0 / p_ssil_buffers.buffer_width;
 		ssil.gather_push_constant.half_screen_pixel_size[1] = 1.0 / p_ssil_buffers.buffer_height;
-		float tan_half_fov_x = 1.0 / p_projection.matrix[0][0];
-		float tan_half_fov_y = 1.0 / p_projection.matrix[1][1];
+		float tan_half_fov_x = 1.0 / p_projection.columns[0][0];
+		float tan_half_fov_y = 1.0 / p_projection.columns[1][1];
 		ssil.gather_push_constant.NDC_to_view_mul[0] = tan_half_fov_x * 2.0;
 		ssil.gather_push_constant.NDC_to_view_mul[1] = tan_half_fov_y * -2.0;
 		ssil.gather_push_constant.NDC_to_view_add[0] = tan_half_fov_x * -1.0;
@@ -1164,8 +1164,8 @@ void SSEffects::generate_ssao(SSAORenderBuffers &p_ssao_buffers, RID p_normal_bu
 
 		ssao.gather_push_constant.half_screen_pixel_size[0] = 1.0 / p_ssao_buffers.buffer_width;
 		ssao.gather_push_constant.half_screen_pixel_size[1] = 1.0 / p_ssao_buffers.buffer_height;
-		float tan_half_fov_x = 1.0 / p_projection.matrix[0][0];
-		float tan_half_fov_y = 1.0 / p_projection.matrix[1][1];
+		float tan_half_fov_x = 1.0 / p_projection.columns[0][0];
+		float tan_half_fov_y = 1.0 / p_projection.columns[1][1];
 		ssao.gather_push_constant.NDC_to_view_mul[0] = tan_half_fov_x * 2.0;
 		ssao.gather_push_constant.NDC_to_view_mul[1] = tan_half_fov_y * -2.0;
 		ssao.gather_push_constant.NDC_to_view_add[0] = tan_half_fov_x * -1.0;
@@ -1457,6 +1457,17 @@ void SSEffects::ssr_set_roughness_quality(RS::EnvironmentSSRRoughnessQuality p_q
 
 void SSEffects::ssr_allocate_buffers(SSRRenderBuffers &p_ssr_buffers, const RenderingDevice::DataFormat p_color_format, const Size2i &p_screen_size, const uint32_t p_view_count) {
 	// As we are processing one view at a time, we can reuse buffers, only our output needs to have layers for each view.
+	if (p_ssr_buffers.size != p_screen_size || p_ssr_buffers.roughness_quality != ssr_roughness_quality) {
+		ssr_free(p_ssr_buffers);
+	}
+
+	if (p_ssr_buffers.output.is_valid()) {
+		// already allocated
+		return;
+	}
+
+	p_ssr_buffers.size = p_screen_size;
+	p_ssr_buffers.roughness_quality = ssr_roughness_quality;
 
 	if (p_ssr_buffers.depth_scaled.is_null()) {
 		RD::TextureFormat tf;
@@ -1581,8 +1592,13 @@ void SSEffects::screen_space_reflection(SSRRenderBuffers &p_ssr_buffers, const R
 			RD::Uniform u_normal_roughness(RD::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE, 1, Vector<RID>({ default_sampler, p_normal_roughness_slices[v] }));
 			RD::get_singleton()->compute_list_bind_uniform_set(compute_list, uniform_set_cache->get_cache(shader, 1, u_depth, u_normal_roughness), 1);
 
-			RD::Uniform u_output_blur(RD::UNIFORM_TYPE_IMAGE, 0, Vector<RID>({ p_ssr_buffers.output_slices[v] }));
-			RD::get_singleton()->compute_list_bind_uniform_set(compute_list, uniform_set_cache->get_cache(shader, 2, u_output_blur), 2);
+			if (ssr_roughness_quality != RS::ENV_SSR_ROUGHNESS_QUALITY_DISABLED) {
+				RD::Uniform u_output(RD::UNIFORM_TYPE_IMAGE, 0, Vector<RID>({ p_ssr_buffers.output_slices[v] }));
+				RD::get_singleton()->compute_list_bind_uniform_set(compute_list, uniform_set_cache->get_cache(shader, 2, u_output), 2);
+			} else {
+				RD::Uniform u_intermediate(RD::UNIFORM_TYPE_IMAGE, 0, Vector<RID>({ p_ssr_buffers.intermediate }));
+				RD::get_singleton()->compute_list_bind_uniform_set(compute_list, uniform_set_cache->get_cache(shader, 2, u_intermediate), 2);
+			}
 
 			RD::Uniform u_scale_depth(RD::UNIFORM_TYPE_IMAGE, 0, Vector<RID>({ p_ssr_buffers.depth_scaled }));
 			RD::Uniform u_scale_normal(RD::UNIFORM_TYPE_IMAGE, 1, Vector<RID>({ p_ssr_buffers.normal_scaled }));
@@ -1611,10 +1627,10 @@ void SSEffects::screen_space_reflection(SSRRenderBuffers &p_ssr_buffers, const R
 			push_constant.num_steps = p_max_steps;
 			push_constant.depth_tolerance = p_tolerance;
 			push_constant.use_half_res = true;
-			push_constant.proj_info[0] = -2.0f / (p_screen_size.width * p_projections[v].matrix[0][0]);
-			push_constant.proj_info[1] = -2.0f / (p_screen_size.height * p_projections[v].matrix[1][1]);
-			push_constant.proj_info[2] = (1.0f - p_projections[v].matrix[0][2]) / p_projections[v].matrix[0][0];
-			push_constant.proj_info[3] = (1.0f + p_projections[v].matrix[1][2]) / p_projections[v].matrix[1][1];
+			push_constant.proj_info[0] = -2.0f / (p_screen_size.width * p_projections[v].columns[0][0]);
+			push_constant.proj_info[1] = -2.0f / (p_screen_size.height * p_projections[v].columns[1][1]);
+			push_constant.proj_info[2] = (1.0f - p_projections[v].columns[0][2]) / p_projections[v].columns[0][0];
+			push_constant.proj_info[3] = (1.0f + p_projections[v].columns[1][2]) / p_projections[v].columns[1][1];
 
 			ScreenSpaceReflectionMode mode = (ssr_roughness_quality != RS::ENV_SSR_ROUGHNESS_QUALITY_DISABLED) ? SCREEN_SPACE_REFLECTION_ROUGH : SCREEN_SPACE_REFLECTION_NORMAL;
 			RID shader = ssr.shader.version_get_shader(ssr.shader_version, mode);
@@ -1624,17 +1640,25 @@ void SSEffects::screen_space_reflection(SSRRenderBuffers &p_ssr_buffers, const R
 			RD::Uniform u_scene_data(RD::UNIFORM_TYPE_UNIFORM_BUFFER, 0, ssr.ubo);
 			RD::get_singleton()->compute_list_bind_uniform_set(compute_list, uniform_set_cache->get_cache(shader, 4, u_scene_data), 4);
 
-			RD::Uniform u_output_blur(RD::UNIFORM_TYPE_IMAGE, 0, Vector<RID>({ p_ssr_buffers.output_slices[v] }));
-			RD::Uniform u_scale_depth(RD::UNIFORM_TYPE_IMAGE, 1, Vector<RID>({ p_ssr_buffers.depth_scaled }));
-			RD::get_singleton()->compute_list_bind_uniform_set(compute_list, uniform_set_cache->get_cache(shader, 0, u_output_blur, u_scale_depth), 0);
-
 			if (ssr_roughness_quality != RS::ENV_SSR_ROUGHNESS_QUALITY_DISABLED) {
+				// read from output slices (our scale wrote into these)
+				RD::Uniform u_output(RD::UNIFORM_TYPE_IMAGE, 0, Vector<RID>({ p_ssr_buffers.output_slices[v] }));
+				RD::Uniform u_scale_depth(RD::UNIFORM_TYPE_IMAGE, 1, Vector<RID>({ p_ssr_buffers.depth_scaled }));
+				RD::get_singleton()->compute_list_bind_uniform_set(compute_list, uniform_set_cache->get_cache(shader, 0, u_output, u_scale_depth), 0);
+
+				// write to intermediate (our roughness pass will output into output slices)
 				RD::Uniform u_intermediate(RD::UNIFORM_TYPE_IMAGE, 0, Vector<RID>({ p_ssr_buffers.intermediate }));
 				RD::Uniform u_blur_radius(RD::UNIFORM_TYPE_IMAGE, 1, Vector<RID>({ p_ssr_buffers.blur_radius[0] }));
 				RD::get_singleton()->compute_list_bind_uniform_set(compute_list, uniform_set_cache->get_cache(shader, 1, u_intermediate, u_blur_radius), 1);
 			} else {
+				// read from intermediate (our scale wrote into these)
 				RD::Uniform u_intermediate(RD::UNIFORM_TYPE_IMAGE, 0, Vector<RID>({ p_ssr_buffers.intermediate }));
-				RD::get_singleton()->compute_list_bind_uniform_set(compute_list, uniform_set_cache->get_cache(shader, 1, u_intermediate), 1);
+				RD::Uniform u_scale_depth(RD::UNIFORM_TYPE_IMAGE, 1, Vector<RID>({ p_ssr_buffers.depth_scaled }));
+				RD::get_singleton()->compute_list_bind_uniform_set(compute_list, uniform_set_cache->get_cache(shader, 0, u_intermediate, u_scale_depth), 0);
+
+				// We are not performing our blur so go directly to output.
+				RD::Uniform u_output(RD::UNIFORM_TYPE_IMAGE, 0, Vector<RID>({ p_ssr_buffers.output_slices[v] }));
+				RD::get_singleton()->compute_list_bind_uniform_set(compute_list, uniform_set_cache->get_cache(shader, 1, u_output), 1);
 			}
 
 			RD::Uniform u_scale_normal(RD::UNIFORM_TYPE_IMAGE, 0, Vector<RID>({ p_ssr_buffers.normal_scaled }));
@@ -1659,10 +1683,10 @@ void SSEffects::screen_space_reflection(SSRRenderBuffers &p_ssr_buffers, const R
 			push_constant.view_index = v;
 			push_constant.orthogonal = p_projections[v].is_orthogonal();
 			push_constant.edge_tolerance = Math::sin(Math::deg_to_rad(15.0));
-			push_constant.proj_info[0] = -2.0f / (p_screen_size.width * p_projections[v].matrix[0][0]);
-			push_constant.proj_info[1] = -2.0f / (p_screen_size.height * p_projections[v].matrix[1][1]);
-			push_constant.proj_info[2] = (1.0f - p_projections[v].matrix[0][2]) / p_projections[v].matrix[0][0];
-			push_constant.proj_info[3] = (1.0f + p_projections[v].matrix[1][2]) / p_projections[v].matrix[1][1];
+			push_constant.proj_info[0] = -2.0f / (p_screen_size.width * p_projections[v].columns[0][0]);
+			push_constant.proj_info[1] = -2.0f / (p_screen_size.height * p_projections[v].columns[1][1]);
+			push_constant.proj_info[2] = (1.0f - p_projections[v].columns[0][2]) / p_projections[v].columns[0][0];
+			push_constant.proj_info[3] = (1.0f + p_projections[v].columns[1][2]) / p_projections[v].columns[1][1];
 			push_constant.vertical = 0;
 			if (ssr_roughness_quality == RS::ENV_SSR_ROUGHNESS_QUALITY_LOW) {
 				push_constant.steps = p_max_steps / 3;

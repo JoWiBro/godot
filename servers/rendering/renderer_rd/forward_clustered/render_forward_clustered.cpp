@@ -1500,9 +1500,8 @@ void RenderForwardClustered::_process_ssr(Ref<RenderSceneBuffersRD> p_render_buf
 	ERR_FAIL_COND(!environment_get_ssr_enabled(p_environment));
 
 	Size2i half_size = Size2i(internal_size.x / 2, internal_size.y / 2);
-	if (rb_data->ss_effects_data.ssr.output.is_null()) {
-		ss_effects->ssr_allocate_buffers(rb_data->ss_effects_data.ssr, _render_buffers_get_color_format(), half_size, view_count);
-	}
+	ss_effects->ssr_allocate_buffers(rb_data->ss_effects_data.ssr, _render_buffers_get_color_format(), half_size, view_count);
+
 	RID texture_slices[RendererSceneRender::MAX_RENDER_VIEWS];
 	RID depth_slices[RendererSceneRender::MAX_RENDER_VIEWS];
 	for (uint32_t v = 0; v < view_count; v++) {
@@ -2095,17 +2094,17 @@ void RenderForwardClustered::_render_buffers_debug_draw(Ref<RenderSceneBuffersRD
 	RID render_target = p_render_buffers->get_render_target();
 
 	if (get_debug_draw_mode() == RS::VIEWPORT_DEBUG_DRAW_SSAO && rb_data->ss_effects_data.ssao.ao_final.is_valid()) {
-		Size2 rtsize = texture_storage->render_target_get_size(render_target);
+		Size2i rtsize = texture_storage->render_target_get_size(render_target);
 		copy_effects->copy_to_fb_rect(rb_data->ss_effects_data.ssao.ao_final, texture_storage->render_target_get_rd_framebuffer(render_target), Rect2(Vector2(), rtsize), false, true);
 	}
 
 	if (get_debug_draw_mode() == RS::VIEWPORT_DEBUG_DRAW_SSIL && rb_data->ss_effects_data.ssil.ssil_final.is_valid()) {
-		Size2 rtsize = texture_storage->render_target_get_size(render_target);
+		Size2i rtsize = texture_storage->render_target_get_size(render_target);
 		copy_effects->copy_to_fb_rect(rb_data->ss_effects_data.ssil.ssil_final, texture_storage->render_target_get_rd_framebuffer(render_target), Rect2(Vector2(), rtsize), false, false);
 	}
 
 	if (get_debug_draw_mode() == RS::VIEWPORT_DEBUG_DRAW_GI_BUFFER && p_render_buffers->has_texture(RB_SCOPE_GI, RB_TEX_AMBIENT)) {
-		Size2 rtsize = texture_storage->render_target_get_size(render_target);
+		Size2i rtsize = texture_storage->render_target_get_size(render_target);
 		RID ambient_texture = p_render_buffers->get_texture(RB_SCOPE_GI, RB_TEX_AMBIENT);
 		RID reflection_texture = p_render_buffers->get_texture(RB_SCOPE_GI, RB_TEX_REFLECTION);
 		copy_effects->copy_to_fb_rect(ambient_texture, texture_storage->render_target_get_rd_framebuffer(render_target), Rect2(Vector2(), rtsize), false, false, false, true, reflection_texture, p_render_buffers->get_view_count() > 1);
@@ -2174,11 +2173,11 @@ void RenderForwardClustered::_render_shadow_pass(RID p_light, RID p_shadow_atlas
 			}
 		}
 
-		int directional_shadow_size = light_storage->directional_shadow_get_size();
-		atlas_rect.position /= directional_shadow_size;
-		atlas_rect.size /= directional_shadow_size;
-
-		light_storage->light_instance_set_directional_shadow_atlas_rect(p_light, p_pass, atlas_rect);
+		float directional_shadow_size = light_storage->directional_shadow_get_size();
+		Rect2 atlas_rect_norm = atlas_rect;
+		atlas_rect_norm.position /= directional_shadow_size;
+		atlas_rect_norm.size /= directional_shadow_size;
+		light_storage->light_instance_set_directional_shadow_atlas_rect(p_light, p_pass, atlas_rect_norm);
 
 		zfar = RSG::light_storage->light_get_param(base, RS::LIGHT_PARAM_RANGE);
 
