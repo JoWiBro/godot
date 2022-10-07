@@ -68,7 +68,7 @@ private:
 	bool monitorable = false;
 	bool locked = false;
 
-	// Ether
+	// (JWB) Ether
 	real_t ether_dendity = 0.1;
 
 	void _body_inout(int p_status, const RID &p_body, ObjectID p_instance, int p_body_shape, int p_area_shape);

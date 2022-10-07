@@ -74,12 +74,12 @@ class GodotBody3D : public GodotCollisionObject3D {
 	real_t _inv_mass = 1.0;
 	Vector3 _inv_inertia; // Relative to the principal axes of inertia
 
-	// Surface Velocity
-	bool enable_surface_velocity = false;
-	Vector3 surface_velocity_axis;
-	real_t surface_velocity_value = 0.0;
+	// (JWB) Surface Velocity
+	real_t surface_velocity_ratio = 0.0;
+	Callable compute_surface_velocity_callback;
+	Callable apply_surface_velocity_impulse_callback;
 
-	// Ether
+	// (JWB) Ether
 	Vector3 ether_velocity;
 
 	// Relative to the local frame of reference
@@ -159,6 +159,10 @@ class GodotBody3D : public GodotCollisionObject3D {
 public:
 	void set_state_sync_callback(const Callable &p_callable);
 	void set_force_integration_callback(const Callable &p_callable, const Variant &p_udata = Variant());
+
+	// (JWB)
+	void set_compute_surface_valocity_callback(const Callable &p_callable);
+	void set_handle_surface_velocity_result_callback(const Callable &p_callable);
 
 	GodotPhysicsDirectBodyState3D *get_direct_state();
 
@@ -341,6 +345,26 @@ public:
 
 	_FORCE_INLINE_ real_t compute_angular_impulse_denominator(const Vector3 &p_axis) const {
 		return p_axis.dot(_inv_inertia_tensor.xform_inv(p_axis));
+	}
+
+	// (JWB)
+	_FORCE_INLINE_ void set_surface_velocity_ratio(real_t ratio) { surface_velocity_ratio = ratio; }
+	_FORCE_INLINE_ real_t get_surface_velocity_ratio() const { return surface_velocity_ratio; }
+
+	// (JWB)
+	_FORCE_INLINE_ Vector3 compute_surface_velocity(const Vector3 &p_pos, const Vector3 &p_normal, Vector3 &surf_vel) const {
+		if (compute_surface_velocity_callback.get_object()) {
+			return compute_surface_velocity_callback.callp(p_pos, p_normal);
+		}
+
+		return Vector3(0.0, 0.0, 0.0);
+	}
+
+	// (JWB)
+	_FORCE_INLINE_ void apply_surface_velocity_impulse(const Vector3 &p_force, const Vector3 &p_pos) {
+		if (apply_surface_velocity_impulse_callback.get_object()) {
+			return apply_surface_velocity_impulse_callback.callp(p_force);
+		}
 	}
 
 	//void simulate_motion(const Transform3D& p_xform,real_t p_step);

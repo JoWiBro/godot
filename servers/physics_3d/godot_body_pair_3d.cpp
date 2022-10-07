@@ -431,8 +431,11 @@ void GodotBodyPair3D::solve(real_t p_step) {
 
 		Vector3 crbA = A->get_biased_angular_velocity().cross(c.rA);
 		Vector3 crbB = B->get_biased_angular_velocity().cross(c.rB);
+
+		// delta biased velocity
 		Vector3 dbv = B->get_biased_linear_velocity() + crbB - A->get_biased_linear_velocity() - crbA;
 
+		// velocity bias normal
 		real_t vbn = dbv.dot(c.normal);
 
 		if (Math::abs(-vbn + c.bias) > MIN_VELOCITY) {
@@ -473,18 +476,25 @@ void GodotBodyPair3D::solve(real_t p_step) {
 			c.active = true;
 		}
 
+		// center relative velocity
 		Vector3 crA = A->get_angular_velocity().cross(c.rA);
 		Vector3 crB = B->get_angular_velocity().cross(c.rB);
+
+		// delta velocity
 		Vector3 dv = B->get_linear_velocity() + crB - A->get_linear_velocity() - crA;
 
-		//normal impulse
+		// normal velocity
 		real_t vn = dv.dot(c.normal);
 
+		// is the normal velocity greater then 
 		if (Math::abs(vn) > MIN_VELOCITY) {
+			// compute normal impulse
 			real_t jn = -(c.bounce + vn) * c.mass_normal;
+			// cache old normal impulse
 			real_t jnOld = c.acc_normal_impulse;
+			// set max normal impulse
 			c.acc_normal_impulse = MAX(jnOld + jn, 0.0f);
-
+			// compute normal impulse vector
 			Vector3 j = c.normal * (c.acc_normal_impulse - jnOld);
 
 			if (collide_A) {
@@ -501,30 +511,48 @@ void GodotBodyPair3D::solve(real_t p_step) {
 
 		real_t friction = combine_friction(A, B);
 
+		// linear velocity of contact points
 		Vector3 lvA = A->get_linear_velocity() + A->get_angular_velocity().cross(c.rA);
 		Vector3 lvB = B->get_linear_velocity() + B->get_angular_velocity().cross(c.rB);
 
-		Vector3 dtv = lvB - lvA;
+		// (JWB) surface velocity of contact points
+		Vector3 svA = A->compute_surface_velocity(c.position, c.normal);
+		Vector3 svB = B->compute_surface_velocity(c.position, -c.normal);
+
+		// delta total volocity
+		Vector3 dtv = (lvB - lvA) + (svB - svA);
+		// tangential normal
 		real_t tn = c.normal.dot(dtv);
 
 		// tangential velocity
 		Vector3 tv = dtv - c.normal * tn;
+		// tangential velocity length
 		real_t tvl = tv.length();
 
 		if (tvl > MIN_VELOCITY) {
+
+			// (JWB) get surface velocity ratio
+			real_t svrA = A->get_surface_velocity_ratio();
+			real_t svrB = B->get_surface_velocity_ratio();
+
+			// normalize tangential velocity to tangential vector
 			tv /= tvl;
 
-			Vector3 temp1 = inv_inertia_tensor_A.xform(c.rA.cross(tv));
-			Vector3 temp2 = inv_inertia_tensor_B.xform(c.rB.cross(tv));
+			Vector3 tempA = inv_inertia_tensor_A.xform(c.rA.cross(tv));
+			Vector3 tempB = inv_inertia_tensor_B.xform(c.rB.cross(tv));
 
-			real_t t = -tvl / (inv_mass_A + inv_mass_B + tv.dot(temp1.cross(c.rA) + temp2.cross(c.rB)));
+			real_t t = -tvl / (inv_mass_A + inv_mass_B + tv.dot(tempA.cross(c.rA) + tempB.cross(c.rB)));
 
+			// compute tangential force
 			Vector3 jt = t * tv;
 
+			// cache old tangential impulse
 			Vector3 jtOld = c.acc_tangent_impulse;
 			c.acc_tangent_impulse += jt;
 
+			// compute friction impulse length
 			real_t fi_len = c.acc_tangent_impulse.length();
+			// compute maximum normal force
 			real_t jtMax = c.acc_normal_impulse * friction;
 
 			if (fi_len > CMP_EPSILON && fi_len > jtMax) {
@@ -534,10 +562,12 @@ void GodotBodyPair3D::solve(real_t p_step) {
 			jt = c.acc_tangent_impulse - jtOld;
 
 			if (collide_A) {
-				A->apply_impulse(-jt, c.rA + A->get_center_of_mass());
+				A->apply_surface_velocity_impulse(-jt * svrA, c.rA + A->get_center_of_mass());
+				A->apply_impulse(-jt * (1.0 - svrA), c.rA + A->get_center_of_mass());
 			}
 			if (collide_B) {
-				B->apply_impulse(jt, c.rB + B->get_center_of_mass());
+				A->apply_surface_velocity_impulse(-jt * svrB, c.rA + A->get_center_of_mass());
+				B->apply_impulse(jt * (1.0 - svrB), c.rB + B->get_center_of_mass());
 			}
 
 			c.active = true;

@@ -66,7 +66,7 @@ class GodotArea3D : public GodotCollisionObject3D {
 	SelfList<GodotArea3D> monitor_query_list;
 	SelfList<GodotArea3D> moved_list;
 
-	// Ether
+	// // (JWB) Ether
 	real_t ether_default_densisty = 0.01;
 	Vector3 ether_default_velocity;
 
@@ -181,6 +181,7 @@ public:
 
 	void compute_gravity(const Vector3 &p_position, Vector3 &r_gravity) const;
 
+	// (JWB)
 	void compute_ether(const Vector3 &p_position, Vector3 &r_ether_velocity, real_t &r_ether_density) const;
 
 	GodotArea3D();
