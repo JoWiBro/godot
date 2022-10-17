@@ -1692,7 +1692,7 @@ void TextEdit::gui_input(const Ref<InputEvent> &p_gui_input) {
 						continue;
 					}
 
-					if (mpos.x > left_margin && mpos.x <= (left_margin + gutters[i].width) - 3) {
+					if (mpos.x >= left_margin && mpos.x <= left_margin + gutters[i].width) {
 						emit_signal(SNAME("gutter_clicked"), row, i);
 						return;
 					}
@@ -1933,7 +1933,7 @@ void TextEdit::gui_input(const Ref<InputEvent> &p_gui_input) {
 					continue;
 				}
 
-				if (mpos.x > left_margin && mpos.x <= (left_margin + gutters[i].width) - 3) {
+				if (mpos.x >= left_margin && mpos.x < left_margin + gutters[i].width) {
 					// We are in this gutter i's horizontal area.
 					current_hovered_gutter = Vector2i(i, hovered_row);
 					break;
@@ -2192,8 +2192,17 @@ void TextEdit::gui_input(const Ref<InputEvent> &p_gui_input) {
 			return;
 		}
 
-		// Handle Unicode (if no modifiers active). Tab	has a value of 0x09.
-		if (allow_unicode_handling && editable && (k->get_unicode() >= 32 || k->get_keycode() == Key::TAB)) {
+		// Handle tab as it has no set unicode value.
+		if (k->is_action("ui_text_indent", true)) {
+			if (editable) {
+				insert_text_at_caret("\t");
+			}
+			accept_event();
+			return;
+		}
+
+		// Handle Unicode (if no modifiers active).
+		if (allow_unicode_handling && editable && k->get_unicode() >= 32) {
 			handle_unicode_input(k->get_unicode());
 			accept_event();
 			return;
@@ -2997,7 +3006,7 @@ Control::CursorShape TextEdit::get_cursor_shape(const Point2 &p_pos) const {
 				continue;
 			}
 
-			if (p_pos.x > left_margin && p_pos.x <= (left_margin + gutters[i].width) - 3) {
+			if (p_pos.x >= left_margin && p_pos.x < left_margin + gutters[i].width) {
 				if (gutters[i].clickable || is_line_gutter_clickable(row, i)) {
 					return CURSOR_POINTING_HAND;
 				}
@@ -4380,7 +4389,7 @@ int TextEdit::add_caret(int p_line, int p_col) {
 }
 
 void TextEdit::remove_caret(int p_caret) {
-	ERR_FAIL_COND(carets.size() <= 0);
+	ERR_FAIL_COND_MSG(carets.size() <= 1, "The main caret should not be removed.");
 	ERR_FAIL_INDEX(p_caret, carets.size());
 	carets.remove_at(p_caret);
 	caret_index_edit_dirty = true;
@@ -4816,10 +4825,11 @@ void TextEdit::select_word_under_caret(int p_caret) {
 			continue;
 		}
 
-		select(get_caret_line(c), begin, get_caret_column(c), end, c);
+		select(get_caret_line(c), begin, get_caret_line(c), end, c);
 		// Move the caret to the end of the word for easier editing.
 		set_caret_column(end, false, c);
 	}
+	merge_overlapping_carets();
 }
 
 void TextEdit::select(int p_from_line, int p_from_column, int p_to_line, int p_to_column, int p_caret) {
@@ -5086,6 +5096,14 @@ void TextEdit::set_scroll_past_end_of_file_enabled(const bool p_enabled) {
 
 bool TextEdit::is_scroll_past_end_of_file_enabled() const {
 	return scroll_past_end_of_file_enabled;
+}
+
+VScrollBar *TextEdit::get_v_scroll_bar() const {
+	return v_scroll;
+}
+
+HScrollBar *TextEdit::get_h_scroll_bar() const {
+	return h_scroll;
 }
 
 void TextEdit::set_v_scroll(double p_scroll) {
@@ -6019,6 +6037,9 @@ void TextEdit::_bind_methods() {
 	// Scrolling.
 	ClassDB::bind_method(D_METHOD("set_smooth_scroll_enabled", "enable"), &TextEdit::set_smooth_scroll_enabled);
 	ClassDB::bind_method(D_METHOD("is_smooth_scroll_enabled"), &TextEdit::is_smooth_scroll_enabled);
+
+	ClassDB::bind_method(D_METHOD("get_v_scroll_bar"), &TextEdit::get_v_scroll_bar);
+	ClassDB::bind_method(D_METHOD("get_h_scroll_bar"), &TextEdit::get_h_scroll_bar);
 
 	ClassDB::bind_method(D_METHOD("set_v_scroll", "value"), &TextEdit::set_v_scroll);
 	ClassDB::bind_method(D_METHOD("get_v_scroll"), &TextEdit::get_v_scroll);
