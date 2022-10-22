@@ -476,12 +476,19 @@ void GodotBodyPair3D::solve(real_t p_step) {
 			c.active = true;
 		}
 
+		// (JWB) surface velocity of contact points
+		Vector3 svA = A->compute_linear_surface_velocity(c.position, c.normal);
+		Vector3 svB = B->compute_linear_surface_velocity(c.position, -c.normal);
+
+		Vector3 scrA = A->compute_angular_surface_velocity(c.position, c.normal).cross(c.rA);
+		Vector3 scrB = B->compute_angular_surface_velocity(c.position, c.normal).cross(c.rB);
+
 		// center relative velocity
 		Vector3 crA = A->get_angular_velocity().cross(c.rA);
 		Vector3 crB = B->get_angular_velocity().cross(c.rB);
 
 		// delta velocity
-		Vector3 dv = B->get_linear_velocity() + crB - A->get_linear_velocity() - crA;
+		Vector3 dv = B->get_linear_velocity() + svB + crB + scrB - A->get_linear_velocity() - svA - crA - scrA;
 
 		// normal velocity
 		real_t vn = dv.dot(c.normal);
@@ -512,16 +519,12 @@ void GodotBodyPair3D::solve(real_t p_step) {
 		real_t friction = combine_friction(A, B);
 
 		// linear velocity of contact points
-		Vector3 lvA = A->get_linear_velocity() + A->get_angular_velocity().cross(c.rA);
-		Vector3 lvB = B->get_linear_velocity() + B->get_angular_velocity().cross(c.rB);
-
-		// (JWB) surface velocity of contact points
-		Vector3 svA = A->compute_surface_velocity(c.position, c.normal);
-		Vector3 svB = B->compute_surface_velocity(c.position, -c.normal);
+		Vector3 lvA = A->get_linear_velocity() + svA + A->get_angular_velocity().cross(c.rA) + scrA;
+		Vector3 lvB = B->get_linear_velocity() + svB + B->get_angular_velocity().cross(c.rB) + scrB;
 
 		// delta total volocity
-		Vector3 dtv = (lvB - lvA) + (svB - svA);
-		// tangential normal
+		Vector3 dtv = lvB - lvA;
+		// tangential normal value
 		real_t tn = c.normal.dot(dtv);
 
 		// tangential velocity
@@ -531,17 +534,15 @@ void GodotBodyPair3D::solve(real_t p_step) {
 
 		if (tvl > MIN_VELOCITY) {
 
-			// (JWB) get surface velocity ratio
-			real_t svrA = A->get_surface_velocity_ratio();
-			real_t svrB = B->get_surface_velocity_ratio();
-
-			// normalize tangential velocity to tangential vector
+			// normalize tangential velocity
 			tv /= tvl;
 
 			Vector3 tempA = inv_inertia_tensor_A.xform(c.rA.cross(tv));
 			Vector3 tempB = inv_inertia_tensor_B.xform(c.rB.cross(tv));
 
-			real_t t = -tvl / (inv_mass_A + inv_mass_B + tv.dot(tempA.cross(c.rA) + tempB.cross(c.rB)));
+			// compute the inverse mass and find the force
+			real_t inv_m = (inv_mass_A + inv_mass_B + tv.dot(tempA.cross(c.rA) + tempB.cross(c.rB)));
+			real_t t = -tvl / inv_m;
 
 			// compute tangential force
 			Vector3 jt = t * tv;
@@ -555,19 +556,50 @@ void GodotBodyPair3D::solve(real_t p_step) {
 			// compute maximum normal force
 			real_t jtMax = c.acc_normal_impulse * friction;
 
+			// limit tangential impulse length with friction
 			if (fi_len > CMP_EPSILON && fi_len > jtMax) {
 				c.acc_tangent_impulse *= jtMax / fi_len;
 			}
 
 			jt = c.acc_tangent_impulse - jtOld;
 
+			// (JWB)
+			//real_t maxfA = A->get_surface_velocity_force();
+			//real_t maxfB = B->get_surface_velocity_force();
+
 			if (collide_A) {
-				A->apply_surface_velocity_impulse(-jt * svrA, c.rA + A->get_center_of_mass());
-				A->apply_impulse(-jt * (1.0 - svrA), c.rA + A->get_center_of_mass());
+				// (JWB)
+				/*
+				Vector3 jtA = jt;
+				if (maxfA >= 0) {
+					if (maxfB >= 0) {
+						real_t jtA_len = jtA.normalize();
+						jtA *= MIN(jtA_len, maxfA);
+					}
+					Vector3 vtA = (jt - jtA) * inv_m;
+
+					A->handle_surface_velocity_result(-vtA, c.rA + A->get_center_of_mass(), c.normal);
+				}
+				*/
+
+				A->apply_impulse(-jtA, c.rA + A->get_center_of_mass());
 			}
 			if (collide_B) {
-				A->apply_surface_velocity_impulse(-jt * svrB, c.rA + A->get_center_of_mass());
-				B->apply_impulse(jt * (1.0 - svrB), c.rB + B->get_center_of_mass());
+				// (JWB)
+				/*
+				Vector3 jtB = jt;
+				if (maxfB >= 0) {
+					if (maxfA >= 0) {
+						real_t jtB_len = jtB.normalize();
+						jtB *= MIN(jtB_len, maxfB);
+					}
+					Vector3 vtB = (jt - jtB) * inv_m;
+
+					B->handle_surface_velocity_result(vtB, c.rB + B->get_center_of_mass(), -c.normal);
+				}
+				*/
+
+				B->apply_impulse(jtB, c.rB + B->get_center_of_mass());
 			}
 
 			c.active = true;

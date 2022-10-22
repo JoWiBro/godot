@@ -75,9 +75,10 @@ class GodotBody3D : public GodotCollisionObject3D {
 	Vector3 _inv_inertia; // Relative to the principal axes of inertia
 
 	// (JWB) Surface Velocity
-	real_t surface_velocity_ratio = 0.0;
-	Callable compute_surface_velocity_callback;
-	Callable apply_surface_velocity_impulse_callback;
+	Callable compute_linear_surface_velocity_callback;
+	Callable compute_angular_surface_velocity_callback;
+	Callable handle_surface_velocity_result_callback;
+	real_t surface_velocity_force = -1;
 
 	// (JWB) Ether
 	Vector3 ether_velocity;
@@ -160,9 +161,12 @@ public:
 	void set_state_sync_callback(const Callable &p_callable);
 	void set_force_integration_callback(const Callable &p_callable, const Variant &p_udata = Variant());
 
-	// (JWB)
-	void set_compute_surface_valocity_callback(const Callable &p_callable);
+	// (JWB) surface velocity
+	void set_compute_surface_velocity_callback(const Callable &p_callable);
 	void set_handle_surface_velocity_result_callback(const Callable &p_callable);
+
+	_FORCE_INLINE_ void set_surface_velocity_force(const Vector3 &p_force) { surface_velocity_force = p_force; }
+	_FORCE_INLINE_ Vector3 get_surface_velocity_force() const { return surface_velocity_force; }
 
 	GodotPhysicsDirectBodyState3D *get_direct_state();
 
@@ -348,22 +352,26 @@ public:
 	}
 
 	// (JWB)
-	_FORCE_INLINE_ void set_surface_velocity_ratio(real_t ratio) { surface_velocity_ratio = ratio; }
-	_FORCE_INLINE_ real_t get_surface_velocity_ratio() const { return surface_velocity_ratio; }
+	_FORCE_INLINE_ Vector3 compute_linear_surface_velocity(const Vector3 &p_pos, const Vector3 &p_normal) const {
+		if (compute_linear_surface_velocity_callback.get_object()) {
+			return compute_linear_surface_velocity_callback.callp(p_pos, p_normal);
+		}
 
-	// (JWB)
-	_FORCE_INLINE_ Vector3 compute_surface_velocity(const Vector3 &p_pos, const Vector3 &p_normal, Vector3 &surf_vel) const {
-		if (compute_surface_velocity_callback.get_object()) {
-			return compute_surface_velocity_callback.callp(p_pos, p_normal);
+		return Vector3(0.0, 0.0, 0.0);
+	}
+
+	_FORCE_INLINE_ Vector3 compute_angular_surface_velocity(const Vector3 &p_pos, const Vector3 &p_normal) const {
+		if (compute_angular_surface_velocity_callback.get_object()) {
+			return compute_angular_surface_velocity_callback.callp(p_pos, p_normal);
 		}
 
 		return Vector3(0.0, 0.0, 0.0);
 	}
 
 	// (JWB)
-	_FORCE_INLINE_ void apply_surface_velocity_impulse(const Vector3 &p_force, const Vector3 &p_pos) {
-		if (apply_surface_velocity_impulse_callback.get_object()) {
-			return apply_surface_velocity_impulse_callback.callp(p_force);
+	_FORCE_INLINE_ void handle_surface_velocity_result(const Vector3 &p_pos, const Vector3 &p_normal, const Vector3 &p_velocity) {
+		if (handle_surface_velocity_result_callback.get_object()) {
+			return handle_surface_velocity_result_callback.callp(p_pos, p_normal, p_velocity);
 		}
 	}
 

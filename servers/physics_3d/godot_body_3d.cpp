@@ -814,13 +814,13 @@ void GodotBody3D::set_force_integration_callback(const Callable &p_callable, con
 }
 
 // (JWB)
-void GodotBody3D::set_compute_surface_valocity_callback(const Callable &p_callable) {
-	compute_surface_velocity_callback = p_callable;
+void GodotBody3D::set_compute_surface_velocity_callback(const Callable &p_callable) {
+	compute_linear_surface_velocity_callback = p_callable;
 }
 
 // (JWB)
-void GodotBody3D::set_apply_surface_velocity_impulse_callback(const Callable &p_callable) {
-	apply_surface_velocity_impulse_callback = p_callable;
+void GodotBody3D::set_handle_surface_velocity_result_callback(const Callable &p_callable) {
+	handle_surface_velocity_result_callback = p_callable;
 }
 
 GodotPhysicsDirectBodyState3D *GodotBody3D::get_direct_state() {
