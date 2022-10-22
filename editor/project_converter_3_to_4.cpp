@@ -302,6 +302,7 @@ static const char *gdscript_function_renames[][2] = {
 	{ "get_cull_mask_bit", "get_cull_mask_value" }, // Camera3D
 	{ "get_cursor_position", "get_caret_column" }, // LineEdit
 	{ "get_d", "get_distance" }, // LineShape2D
+	{ "get_depth_bias_enable", "get_depth_bias_enabled" }, // RDPipelineRasterizationState
 	{ "get_drag_data", "_get_drag_data" }, // Control
 	{ "get_drag_data_fw", "_get_drag_data_fw" }, // ScriptEditor
 	{ "get_editor_viewport", "get_editor_main_screen" }, // EditorPlugin
@@ -310,6 +311,7 @@ static const char *gdscript_function_renames[][2] = {
 	{ "get_error_string", "get_error_message" }, // JSON
 	{ "get_filename", "get_scene_file_path" }, // Node, WARNING, this may be used in a lot of other places
 	{ "get_focus_neighbour", "get_focus_neighbor" }, // Control
+	{ "get_follow_smoothing", "get_position_smoothing_speed" }, // Camera2D
 	{ "get_font_types", "get_font_type_list" }, // Theme
 	{ "get_frame_color", "get_color" }, // ColorRect
 	{ "get_global_rate_scale", "get_playback_speed_scale" }, // AudioServer
@@ -358,6 +360,7 @@ static const char *gdscript_function_renames[][2] = {
 	{ "get_render_targetsize", "get_render_target_size" }, // XRInterface
 	{ "get_resource_type", "_get_resource_type" }, // ResourceFormatLoader
 	{ "get_result", "get_data" }, //JSON
+	{ "get_reverb_bus", "set_reverb_bus_name" }, // Area3D
 	{ "get_rpc_sender_id", "get_remote_sender_id" }, // Multiplayer API
 	{ "get_save_extension", "_get_save_extension" }, // EditorImportPlugin
 	{ "get_scancode", "get_keycode" }, // InputEventKey
@@ -379,6 +382,7 @@ static const char *gdscript_function_renames[][2] = {
 	{ "get_theme_item_types", "get_theme_item_type_list" }, // Theme
 	{ "get_timer_process_mode", "get_timer_process_callback" }, // Timer
 	{ "get_translation", "get_position" }, // Node3D broke GLTFNode which is used rarely
+	{ "get_unit_db", "get_volume_db" }, // AudioStreamPlayer3D
 	{ "get_unit_offset", "get_progress_ratio" }, // PathFollow2D, PathFollow3D
 	{ "get_use_in_baked_light", "is_baking_navigation" }, // GridMap
 	{ "get_used_cells_by_id", "get_used_cells" }, // TileMap
@@ -416,6 +420,7 @@ static const char *gdscript_function_renames[][2] = {
 	{ "is_commiting_action", "is_committing_action" }, // UndoRedo
 	{ "is_doubleclick", "is_double_click" }, // InputEventMouseButton
 	{ "is_draw_red", "is_draw_warning" }, // EditorProperty
+	{ "is_follow_smoothing_enabled", "is_position_smoothing_enabled" }, // Camera2D
 	{ "is_h_drag_enabled", "is_drag_horizontal_enabled" }, // Camera2D
 	{ "is_handle_highlighted", "_is_handle_highlighted" }, // EditorNode3DGizmo, EditorNode3DGizmoPlugin
 	{ "is_inverting_faces", "get_flip_faces" }, // CSGPrimitive3D
@@ -494,13 +499,16 @@ static const char *gdscript_function_renames[][2] = {
 	{ "set_cull_mask_bit", "set_cull_mask_value" }, // Camera3D
 	{ "set_cursor_position", "set_caret_column" }, // LineEdit
 	{ "set_d", "set_distance" }, // WorldMarginShape2D
+	{ "set_depth_bias_enable", "set_depth_bias_enabled" }, // RDPipelineRasterizationState
 	{ "set_doubleclick", "set_double_click" }, // InputEventMouseButton
 	{ "set_draw_red", "set_draw_warning" }, // EditorProperty
+	{ "set_enable_follow_smoothing", "set_position_smoothing_enabled" }, // Camera2D
 	{ "set_enabled_focus_mode", "set_focus_mode" }, // BaseButton
 	{ "set_endian_swap", "set_big_endian" }, // File
 	{ "set_expand_to_text_length", "set_expand_to_text_length_enabled" }, // LineEdit
 	{ "set_filename", "set_scene_file_path" }, // Node, WARNING, this may be used in a lot of other places
 	{ "set_focus_neighbour", "set_focus_neighbor" }, // Control
+	{ "set_follow_smoothing", "set_position_smoothing_speed" }, // Camera2D
 	{ "set_frame_color", "set_color" }, // ColorRect
 	{ "set_global_rate_scale", "set_playback_speed_scale" }, // AudioServer
 	{ "set_gravity_distance_scale", "set_gravity_point_distance_scale" }, // Area2D
@@ -524,9 +532,11 @@ static const char *gdscript_function_renames[][2] = {
 	{ "set_oneshot", "set_one_shot" }, // AnimatedTexture
 	{ "set_pause_mode", "set_process_mode" }, // Node
 	{ "set_physical_scancode", "set_physical_keycode" }, // InputEventKey
+	{ "set_proximity_fade", "set_proximity_fade_enabled" }, // Material
 	{ "set_refuse_new_network_connections", "set_refuse_new_connections" }, // Multiplayer API
 	{ "set_region", "set_region_enabled" }, // Sprite2D, Sprite broke AtlasTexture
 	{ "set_region_filter_clip", "set_region_filter_clip_enabled" }, // Sprite2D
+	{ "set_reverb_bus", "set_reverb_bus_name" }, // Area3D
 	{ "set_rotate", "set_rotates" }, // PathFollow2D
 	{ "set_scancode", "set_keycode" }, // InputEventKey
 	{ "set_shift", "set_shift_pressed" }, // InputEventWithModifiers
@@ -544,6 +554,7 @@ static const char *gdscript_function_renames[][2] = {
 	{ "set_text_align", "set_text_alignment" }, // Button
 	{ "set_timer_process_mode", "set_timer_process_callback" }, // Timer
 	{ "set_translation", "set_position" }, // Node3D - this broke GLTFNode which is used rarely
+	{ "set_unit_db", "set_volume_db" }, // AudioStreamPlayer3D
 	{ "set_unit_offset", "set_progress_ratio" }, // PathFollow2D, PathFollow3D
 	{ "set_uv2", "surface_set_uv2" }, // ImmediateMesh broke Surffacetool
 	{ "set_v_drag_enabled", "set_drag_vertical_enabled" }, // Camera2D
@@ -739,12 +750,14 @@ static const char *csharp_function_renames[][2] = {
 	{ "GetCullMaskBit", "GetCullMaskValue" }, // Camera3D
 	{ "GetCursorPosition", "GetCaretColumn" }, // LineEdit
 	{ "GetD", "GetDistance" }, // LineShape2D
+	{ "GetDepthBiasEnable", "GetDepthBiasEnabled" }, // RDPipelineRasterizationState
 	{ "GetDragDataFw", "_GetDragDataFw" }, // ScriptEditor
 	{ "GetEditorViewport", "GetViewport" }, // EditorPlugin
 	{ "GetEnabledFocusMode", "GetFocusMode" }, // BaseButton
 	{ "GetEndianSwap", "IsBigEndian" }, // File
 	{ "GetErrorString", "GetErrorMessage" }, // JSON
 	{ "GetFocusNeighbour", "GetFocusNeighbor" }, // Control
+	{ "GetFollowSmoothing", "GetFollowSmoothingSpeed" }, // Camera2D
 	{ "GetFontTypes", "GetFontTypeList" }, // Theme
 	{ "GetFrameColor", "GetColor" }, // ColorRect
 	{ "GetGlobalRateScale", "GetPlaybackSpeedScale" }, // AudioServer
@@ -792,6 +805,7 @@ static const char *csharp_function_renames[][2] = {
 	{ "GetRenderTargetsize", "GetRenderTargetSize" }, // XRInterface
 	{ "GetResourceType", "_GetResourceType" }, // ResourceFormatLoader
 	{ "GetResult", "GetData" }, //JSON
+	{ "GetReverbBus", "GetReverbBusName" }, // Area3D
 	{ "GetRpcSenderId", "GetRemoteSenderId" }, // Multiplayer API
 	{ "GetSaveExtension", "_GetSaveExtension" }, // EditorImportPlugin
 	{ "GetScancode", "GetKeycode" }, // InputEventKey
@@ -812,6 +826,7 @@ static const char *csharp_function_renames[][2] = {
 	{ "GetThemeItemTypes", "GetThemeItemTypeList" }, // Theme
 	{ "GetTimerProcessMode", "GetTimerProcessCallback" }, // Timer
 	{ "GetTranslation", "GetPosition" }, // Node3D broke GLTFNode which is used rarely
+	{ "GetUnitDb", "GetVolumeDb" }, // AudioStreamPlayer3D
 	{ "GetUnitOffset", "GetProgressRatio" }, // PathFollow2D, PathFollow3D
 	{ "GetUseInBakedLight", "IsBakingNavigation" }, // GridMap
 	{ "GetUsedCellsById", "GetUsedCells" }, // TileMap
@@ -848,6 +863,7 @@ static const char *csharp_function_renames[][2] = {
 	{ "IsAParentOf", "IsAncestorOf" }, // Node
 	{ "IsCommitingAction", "IsCommittingAction" }, // UndoRedo
 	{ "IsDoubleclick", "IsDoubleClick" }, // InputEventMouseButton
+	{ "IsFollowSmoothingEnabled", "IsPositionSmoothingEnabled" }, // Camera2D
 	{ "IsHDragEnabled", "IsDragHorizontalEnabled" }, // Camera2D
 	{ "IsHandleHighlighted", "_IsHandleHighlighted" }, // EditorNode3DGizmo, EditorNode3DGizmoPlugin
 	{ "IsNetworkMaster", "IsMultiplayerAuthority" }, // Node
@@ -922,11 +938,14 @@ static const char *csharp_function_renames[][2] = {
 	{ "SetCullMaskBit", "SetCullMaskValue" }, // Camera3D
 	{ "SetCursorPosition", "SetCaretColumn" }, // LineEdit
 	{ "SetD", "SetDistance" }, // WorldMarginShape2D
+	{ "SetDepthBiasEnable", "SetDepthBiasEnabled" }, // RDPipelineRasterizationState
 	{ "SetDoubleclick", "SetDoubleClick" }, // InputEventMouseButton
+	{ "SetEnableFollowSmoothing", "SetFollowSmoothingEnabled" }, // Camera2D
 	{ "SetEnabledFocusMode", "SetFocusMode" }, // BaseButton
 	{ "SetEndianSwap", "SetBigEndian" }, // File
 	{ "SetExpandToTextLength", "SetExpandToTextLengthEnabled" }, // LineEdit
 	{ "SetFocusNeighbour", "SetFocusNeighbor" }, // Control
+	{ "SetFollowSmoothing", "SetFollowSmoothingSpeed" }, // Camera2D
 	{ "SetFrameColor", "SetColor" }, // ColorRect
 	{ "SetGlobalRateScale", "SetPlaybackSpeedScale" }, // AudioServer
 	{ "SetGravityDistanceScale", "SetGravityPointDistanceScale" }, // Area2D
@@ -948,9 +967,11 @@ static const char *csharp_function_renames[][2] = {
 	{ "SetNetworkPeer", "SetMultiplayerPeer" }, // Multiplayer API
 	{ "SetOneshot", "SetOneShot" }, // AnimatedTexture
 	{ "SetPhysicalScancode", "SetPhysicalKeycode" }, // InputEventKey
+	{ "SetProximityFade", "SetProximityFadeEnabled" }, // Material
 	{ "SetRefuseNewNetworkConnections", "SetRefuseNewConnections" }, // Multiplayer API
 	{ "SetRegion", "SetRegionEnabled" }, // Sprite2D, Sprite broke AtlasTexture
 	{ "SetRegionFilterClip", "SetRegionFilterClipEnabled" }, // Sprite2D
+	{ "SetReverbBus", "SetReverbBusName" }, // Area3D
 	{ "SetRotate", "SetRotates" }, // PathFollow2D
 	{ "SetScancode", "SetKeycode" }, // InputEventKey
 	{ "SetShift", "SetShiftPressed" }, // InputEventWithModifiers
@@ -969,6 +990,7 @@ static const char *csharp_function_renames[][2] = {
 	{ "SetTimerProcessMode", "SetTimerProcessCallback" }, // Timer
 	{ "SetTonemapAutoExposure", "SetTonemapAutoExposureEnabled" }, // Environment
 	{ "SetTranslation", "SetPosition" }, // Node3D - this broke GLTFNode which is used rarely
+	{ "SetUnitDb", "SetVolumeDb" }, // AudioStreamPlayer3D
 	{ "SetUnitOffset", "SetProgressRatio" }, // PathFollow2D, PathFollow3D
 	{ "SetUv2", "SurfaceSetUv2" }, // ImmediateMesh broke Surffacetool
 	{ "SetVDragEnabled", "SetDragVerticalEnabled" }, // Camera2D
@@ -1067,6 +1089,7 @@ static const char *gdscript_properties_renames[][2] = {
 	{ "close_v_ofs", "close_v_offset" }, // Theme
 	{ "commentfocus", "comment_focus" }, // Theme
 	{ "contacts_reported", "max_contacts_reported" }, // RigidBody
+	{ "depth_bias_enable", "depth_bias_enabled" }, // RDPipelineRasterizationState
 	{ "drag_margin_bottom", "drag_bottom_margin" }, // Camera2D
 	{ "drag_margin_h_enabled", "drag_horizontal_enabled" }, // Camera2D
 	{ "drag_margin_left", "drag_left_margin" }, // Camera2D
@@ -1109,6 +1132,7 @@ static const char *gdscript_properties_renames[][2] = {
 	{ "pause_mode", "process_mode" }, // Node
 	{ "physical_scancode", "physical_keycode" }, // InputEventKey
 	{ "popup_exclusive", "exclusive" }, // Window
+	{ "proximity_fade_enable", "proximity_fade_enabled" }, // Material
 	{ "rect_position", "position" }, // Control
 	{ "rect_global_position", "global_position" }, // Control
 	{ "rect_size", "size" }, // Control
@@ -1119,9 +1143,12 @@ static const char *gdscript_properties_renames[][2] = {
 	{ "rect_clip_content", "clip_contents" }, // Control
 	{ "refuse_new_network_connections", "refuse_new_connections" }, // MultiplayerAPI
 	{ "region_filter_clip", "region_filter_clip_enabled" }, // Sprite2D
+	{ "reverb_bus_enable", "reverb_bus_enabled" }, // Area3D
 	{ "selectedframe", "selected_frame" }, // Theme
 	{ "size_override_stretch", "size_2d_override_stretch" }, // SubViewport
 	{ "slips_on_slope", "slide_on_slope" }, // SeparationRayShape2D
+	{ "smoothing_enabled", "follow_smoothing_enabled" }, // Camera2D
+	{ "smoothing_speed", "position_smoothing_speed" }, // Camera2D
 	{ "ss_reflections_depth_tolerance", "ssr_depth_tolerance" }, // Environment
 	{ "ss_reflections_enabled", "ssr_enabled" }, // Environment
 	{ "ss_reflections_fade_in", "ssr_fade_in" }, // Environment
@@ -1133,6 +1160,7 @@ static const char *gdscript_properties_renames[][2] = {
 	{ "table_hseparation", "table_h_separation" }, // Theme
 	{ "table_vseparation", "table_v_separation" }, // Theme
 	{ "translation", "position" }, // Node3D - broke GLTFNode
+	{ "unit_db", "volume_db" }, // AudioStreamPlayer3D
 	{ "unit_offset", "progress_ratio" }, // PathFollow2D, PathFollow3D
 	{ "vseparation", "v_separation" }, // Theme
 
@@ -1172,6 +1200,7 @@ static const char *csharp_properties_renames[][2] = {
 	{ "CloseHOfs", "CloseHOffset" }, // Theme
 	{ "CloseVOfs", "CloseVOffset" }, // Theme
 	{ "Commentfocus", "CommentFocus" }, // Theme
+	{ "DepthBiasEnable", "DepthBiasEnabled" }, // RDPipelineRasterizationState
 	{ "DragMarginBottom", "DragBottomMargin" }, // Camera2D
 	{ "DragMarginHEnabled", "DragHorizontalEnabled" }, // Camera2D
 	{ "DragMarginLeft", "DragLeftMargin" }, // Camera2D
@@ -1207,11 +1236,15 @@ static const char *csharp_properties_renames[][2] = {
 	{ "PauseMode", "ProcessMode" }, // Node
 	{ "PhysicalScancode", "PhysicalKeycode" }, // InputEventKey
 	{ "PopupExclusive", "Exclusive" }, // Window
+	{ "ProximityFadeEnable", "ProximityFadeEnabled" }, // Material
 	{ "RefuseNewNetworkConnections", "RefuseNewConnections" }, // MultiplayerAPI
 	{ "RegionFilterClip", "RegionFilterClipEnabled" }, // Sprite2D
+	{ "ReverbBusEnable", "ReverbBusEnabled" }, // Area3D
 	{ "Selectedframe", "SelectedFrame" }, // Theme
 	{ "SizeOverrideStretch", "Size2dOverrideStretch" }, // SubViewport
 	{ "SlipsOnSlope", "SlideOnSlope" }, // SeparationRayShape2D
+	{ "SmoothingEnabled", "FollowSmoothingEnabled" }, // Camera2D
+	{ "SmoothingSpeed", "FollowSmoothingSpeed" }, // Camera2D
 	{ "SsReflectionsDepthTolerance", "SsrDepthTolerance" }, // Environment
 	{ "SsReflectionsEnabled", "SsrEnabled" }, // Environment
 	{ "SsReflectionsFadeIn", "SsrFadeIn" }, // Environment
@@ -1223,6 +1256,7 @@ static const char *csharp_properties_renames[][2] = {
 	{ "TableHseparation", "TableHSeparation" }, // Theme
 	{ "TableVseparation", "TableVSeparation" }, // Theme
 	{ "Translation", "Position" }, // Node3D - broke GLTFNode
+	{ "UnitDb", "VolumeDb" }, // AudioStreamPlayer3D
 	{ "UnitOffset", "ProgressRatio" }, // PathFollow2D, PathFollow3D
 	{ "Vseparation", "VSeparation" }, // Theme
 

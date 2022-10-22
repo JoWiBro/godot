@@ -2655,25 +2655,33 @@ void DisplayServerMacOS::window_set_window_buttons_offset(const Vector2i &p_offs
 
 	ERR_FAIL_COND(!windows.has(p_window));
 	WindowData &wd = windows[p_window];
-	wd.wb_offset = p_offset;
+	float scale = screen_get_max_scale();
+	wd.wb_offset = p_offset / scale;
+	wd.wb_offset.x = MAX(wd.wb_offset.x, 12);
+	wd.wb_offset.y = MAX(wd.wb_offset.y, 12);
+	if (wd.window_button_view) {
+		[wd.window_button_view setOffset:NSMakePoint(wd.wb_offset.x, wd.wb_offset.y)];
+	}
 }
 
-Vector2i DisplayServerMacOS::window_get_safe_title_margins(WindowID p_window) const {
+Vector3i DisplayServerMacOS::window_get_safe_title_margins(WindowID p_window) const {
 	_THREAD_SAFE_METHOD_
 
-	ERR_FAIL_COND_V(!windows.has(p_window), Vector2i());
+	ERR_FAIL_COND_V(!windows.has(p_window), Vector3i());
 	const WindowData &wd = windows[p_window];
 
 	if (!wd.window_button_view) {
-		return Vector2i();
+		return Vector3i();
 	}
 
-	float max_x = wd.wb_offset.x + [wd.window_button_view frame].size.width;
+	float scale = screen_get_max_scale();
+	float max_x = [wd.window_button_view getOffset].x + [wd.window_button_view frame].size.width;
+	float max_y = [wd.window_button_view getOffset].y + [wd.window_button_view frame].size.height;
 
 	if ([wd.window_object windowTitlebarLayoutDirection] == NSUserInterfaceLayoutDirectionRightToLeft) {
-		return Vector2i(0, max_x * screen_get_max_scale());
+		return Vector3i(0, max_x * scale, max_y * scale);
 	} else {
-		return Vector2i(max_x * screen_get_max_scale(), 0);
+		return Vector3i(max_x * scale, 0, max_y * scale);
 	}
 }
 
@@ -3400,7 +3408,26 @@ void DisplayServerMacOS::set_icon(const Ref<Image> &p_icon) {
 DisplayServer *DisplayServerMacOS::create_func(const String &p_rendering_driver, WindowMode p_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i &p_resolution, Error &r_error) {
 	DisplayServer *ds = memnew(DisplayServerMacOS(p_rendering_driver, p_mode, p_vsync_mode, p_flags, p_resolution, r_error));
 	if (r_error != OK) {
-		OS::get_singleton()->alert("Your video card driver does not support any of the supported Vulkan or OpenGL versions.", "Unable to initialize Video driver");
+		if (p_rendering_driver == "vulkan") {
+			String executable_command;
+			if (OS::get_singleton()->get_bundle_resource_dir() == OS::get_singleton()->get_executable_path().get_base_dir()) {
+				executable_command = vformat("%s --rendering-driver opengl3", OS::get_singleton()->get_executable_path());
+			} else {
+				executable_command = vformat("open %s --args --rendering-driver opengl3", OS::get_singleton()->get_bundle_resource_dir().path_join("../..").simplify_path());
+			}
+			OS::get_singleton()->alert("Your video card driver does not support the selected Vulkan version.\n"
+									   "Please try updating your GPU driver or try using the OpenGL 3 driver.\n"
+									   "You can enable the OpenGL 3 driver by starting the engine from the\n"
+									   "command line with the command: '" +
+							executable_command + "'.\n"
+												 "If you have updated your graphics drivers recently, try rebooting.",
+					"Unable to initialize Video driver");
+		} else {
+			OS::get_singleton()->alert("Your video card driver does not support the selected OpenGL version.\n"
+									   "Please try updating your GPU driver.\n"
+									   "If you have updated your graphics drivers recently, try rebooting.",
+					"Unable to initialize Video driver");
+		}
 	}
 	return ds;
 }

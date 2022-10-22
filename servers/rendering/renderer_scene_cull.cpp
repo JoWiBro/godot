@@ -869,12 +869,7 @@ void RendererSceneCull::instance_set_transform(RID p_instance, const Transform3D
 
 	for (int i = 0; i < 4; i++) {
 		const Vector3 &v = i < 3 ? p_transform.basis.rows[i] : p_transform.origin;
-		ERR_FAIL_COND(Math::is_inf(v.x));
-		ERR_FAIL_COND(Math::is_nan(v.x));
-		ERR_FAIL_COND(Math::is_inf(v.y));
-		ERR_FAIL_COND(Math::is_nan(v.y));
-		ERR_FAIL_COND(Math::is_inf(v.z));
-		ERR_FAIL_COND(Math::is_nan(v.z));
+		ERR_FAIL_COND(!v.is_finite());
 	}
 
 #endif
@@ -3862,7 +3857,7 @@ void RendererSceneCull::_update_dirty_instance(Instance *p_instance) {
 			}
 
 			if (p_instance->material_overlay.is_valid()) {
-				can_cast_shadows = can_cast_shadows || RSG::material_storage->material_casts_shadows(p_instance->material_overlay);
+				can_cast_shadows = can_cast_shadows && RSG::material_storage->material_casts_shadows(p_instance->material_overlay);
 				is_animated = is_animated || RSG::material_storage->material_is_animated(p_instance->material_overlay);
 				_update_instance_shader_uniforms_from_material(isparams, p_instance->instance_shader_uniforms, p_instance->material_overlay);
 			}

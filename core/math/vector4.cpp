@@ -30,8 +30,7 @@
 
 #include "vector4.h"
 
-#include "core/math/basis.h"
-#include "core/string/print_string.h"
+#include "core/string/ustring.h"
 
 Vector4::Axis Vector4::min_axis_index() const {
 	uint32_t min_index = 0;
@@ -63,6 +62,10 @@ bool Vector4::is_equal_approx(const Vector4 &p_vec4) const {
 
 bool Vector4::is_zero_approx() const {
 	return Math::is_zero_approx(x) && Math::is_zero_approx(y) && Math::is_zero_approx(z) && Math::is_zero_approx(w);
+}
+
+bool Vector4::is_finite() const {
+	return Math::is_finite(x) && Math::is_finite(y) && Math::is_finite(z) && Math::is_finite(w);
 }
 
 real_t Vector4::length() const {

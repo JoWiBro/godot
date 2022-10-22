@@ -6204,7 +6204,7 @@ void AnimationTrackEditor::_edit_menu_pressed(int p_option) {
 				if (do_bake && !animation->track_is_compressed(i)) {
 					Animation::InterpolationType it = animation->track_get_interpolation_type(i);
 					if (it == Animation::INTERPOLATION_NEAREST) {
-						continue; // Nearest and Angle interpolation cannot be baked.
+						continue; // Nearest interpolation cannot be baked.
 					}
 
 					// Special case for angle interpolation.
@@ -6458,6 +6458,7 @@ void AnimationTrackEditor::_select_all_tracks_for_copy() {
 void AnimationTrackEditor::_bind_methods() {
 	ClassDB::bind_method("_animation_update", &AnimationTrackEditor::_animation_update);
 	ClassDB::bind_method("_track_grab_focus", &AnimationTrackEditor::_track_grab_focus);
+	ClassDB::bind_method("_redraw_tracks", &AnimationTrackEditor::_redraw_tracks);
 	ClassDB::bind_method("_clear_selection_for_anim", &AnimationTrackEditor::_clear_selection_for_anim);
 	ClassDB::bind_method("_select_at_anim", &AnimationTrackEditor::_select_at_anim);
 	ClassDB::bind_method("_clear_selection", &AnimationTrackEditor::_clear_selection);
