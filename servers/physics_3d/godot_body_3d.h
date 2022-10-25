@@ -162,7 +162,8 @@ public:
 	void set_force_integration_callback(const Callable &p_callable, const Variant &p_udata = Variant());
 
 	// (JWB) surface velocity
-	void set_compute_surface_velocity_callback(const Callable &p_callable);
+	void set_compute_linear_surface_velocity_callback(const Callable &p_callable);
+	void set_compute_angular_surface_velocity_callback(const Callable &p_callable);
 	void set_handle_surface_velocity_result_callback(const Callable &p_callable);
 
 	_FORCE_INLINE_ void set_surface_velocity_force(const Vector3 &p_force) { surface_velocity_force = p_force; }
@@ -360,6 +361,7 @@ public:
 		return Vector3(0.0, 0.0, 0.0);
 	}
 
+	// (JWB)
 	_FORCE_INLINE_ Vector3 compute_angular_surface_velocity(const Vector3 &p_pos, const Vector3 &p_normal) const {
 		if (compute_angular_surface_velocity_callback.get_object()) {
 			return compute_angular_surface_velocity_callback.callp(p_pos, p_normal);
@@ -371,7 +373,7 @@ public:
 	// (JWB)
 	_FORCE_INLINE_ void handle_surface_velocity_result(const Vector3 &p_pos, const Vector3 &p_normal, const Vector3 &p_velocity) {
 		if (handle_surface_velocity_result_callback.get_object()) {
-			return handle_surface_velocity_result_callback.callp(p_pos, p_normal, p_velocity);
+			handle_surface_velocity_result_callback.callp(p_pos, p_normal, p_velocity);
 		}
 	}
 

@@ -903,6 +903,20 @@ void GodotPhysicsServer3D::body_set_force_integration_callback(RID p_body, const
 	body->set_force_integration_callback(p_callable, p_udata);
 }
 
+// (JWB)
+void GodotPhysicsServer3D::body_set_compute_linear_surface_velocity(RID p_body, const Callable &p_callable) {
+	GodotBody3D *body = body_owner.get_or_null(p_body);
+	ERR_FAIL_COND(!body);
+	body->set_compute_linear_surface_velocity_callback(p_callable);
+}
+
+// (JWB)
+void GodotPhysicsServer3D::body_set_compute_angular_surface_velocity(RID p_body, const Callable &p_callable) {
+	GodotBody3D *body = body_owner.get_or_null(p_body);
+	ERR_FAIL_COND(!body);
+	body->set_compute_linear_surface_velocity_callback(p_callable);
+}
+
 void GodotPhysicsServer3D::body_set_ray_pickable(RID p_body, bool p_enable) {
 	GodotBody3D *body = body_owner.get_or_null(p_body);
 	ERR_FAIL_COND(!body);

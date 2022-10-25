@@ -814,8 +814,13 @@ void GodotBody3D::set_force_integration_callback(const Callable &p_callable, con
 }
 
 // (JWB)
-void GodotBody3D::set_compute_surface_velocity_callback(const Callable &p_callable) {
+void GodotBody3D::set_compute_linear_surface_velocity_callback(const Callable &p_callable) {
 	compute_linear_surface_velocity_callback = p_callable;
+}
+
+// (JWB)
+void GodotBody3D::set_compute_angular_surface_velocity_callback(const Callable &p_callable) {
+	compute_angular_surface_velocity_callback = p_callable;
 }
 
 // (JWB)

@@ -248,6 +248,10 @@ public:
 	virtual void body_set_state_sync_callback(RID p_body, const Callable &p_callable) override;
 	virtual void body_set_force_integration_callback(RID p_body, const Callable &p_callable, const Variant &p_udata = Variant()) override;
 
+	// (JWB)
+	virtual void body_set_compute_linear_surface_velocity(RID p_body, const Callable &p_callable) override;
+	virtual void body_set_compute_angular_surface_velocity(RID p_body, const Callable &p_callable) override;
+
 	virtual void body_set_ray_pickable(RID p_body, bool p_enable) override;
 
 	virtual bool body_test_motion(RID p_body, const MotionParameters &p_parameters, MotionResult *r_result = nullptr) override;
