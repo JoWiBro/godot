@@ -75,6 +75,7 @@ class GodotBody3D : public GodotCollisionObject3D {
 	Vector3 _inv_inertia; // Relative to the principal axes of inertia
 
 	// (JWB) Surface Velocity
+<<<<<<< Updated upstream
 	Callable compute_linear_surface_velocity_callback;
 	Callable compute_angular_surface_velocity_callback;
 	Callable handle_surface_velocity_result_callback;
@@ -362,18 +363,37 @@ public:
 	}
 
 	// (JWB)
+<<<<<<< Updated upstream
 	_FORCE_INLINE_ Vector3 compute_angular_surface_velocity(const Vector3 &p_pos, const Vector3 &p_normal) const {
 		if (compute_angular_surface_velocity_callback.get_object()) {
 			return compute_angular_surface_velocity_callback.callp(p_pos, p_normal);
+		if (compute_surface_velocity_callback.get_object()) {
+			Variant pos(p_pos);
+			Variant norm(p_normal);
+
+			const Variant *vp[2] = { &pos, &norm };
+			Callable::CallError ce;
+			Variant rv;
+			compute_surface_velocity_callback.callp(vp, 2, rv, ce);
+			return rv;
 		}
 
 		return Vector3(0.0, 0.0, 0.0);
 	}
 
 	// (JWB)
+<<<<<<< Updated upstream
 	_FORCE_INLINE_ void handle_surface_velocity_result(const Vector3 &p_pos, const Vector3 &p_normal, const Vector3 &p_velocity) {
 		if (handle_surface_velocity_result_callback.get_object()) {
 			handle_surface_velocity_result_callback.callp(p_pos, p_normal, p_velocity);
+		if (handle_surface_velocity_result_callback.get_object()) {
+			Variant force(p_force);
+			Variant pos(p_pos);
+
+			const Variant *vp[2] = { &force, &pos };
+			Callable::CallError ce;
+			Variant rv;
+			handle_surface_velocity_result_callback.callp(vp, 2, rv, ce);
 		}
 	}
 
