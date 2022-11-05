@@ -514,6 +514,10 @@ public:
 	virtual void body_set_state_sync_callback(RID p_body, const Callable &p_callable) = 0;
 	virtual void body_set_force_integration_callback(RID p_body, const Callable &p_callable, const Variant &p_udata = Variant()) = 0;
 
+	// (JWB)
+	virtual void body_set_compute_linear_surface_velocity(RID p_body, const Callable &p_callable) = 0;
+	virtual void body_set_compute_angular_surface_velocity(RID p_body, const Callable &p_callable) = 0;
+
 	virtual void body_set_ray_pickable(RID p_body, bool p_enable) = 0;
 
 	// this function only works on physics process, errors and returns null otherwise

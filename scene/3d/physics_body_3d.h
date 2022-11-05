@@ -54,8 +54,8 @@ protected:
 	Vector3 surface_velocity_axis;
 	real_t surface_velocity_speed;
 
-	virtual Vector3 _compute_linear_surface_velocity_conveyor(onst Vector3 &p_pos, const Vector3 &p_normal);
-	virtual Vector3 _compute_linear_surface_velocity_burrowing(onst Vector3 &p_pos, const Vector3 &p_normal);
+	virtual Vector3 _compute_linear_surface_velocity_conveyor(const Vector3 &p_pos, const Vector3 &p_normal);
+	virtual Vector3 _compute_linear_surface_velocity_burrowing(const Vector3 &p_pos, const Vector3 &p_normal);
 
 	Ref<KinematicCollision3D> _move(const Vector3 &p_distance, bool p_test_only = false, real_t p_margin = 0.001, bool p_recovery_as_collision = false, int p_max_collisions = 1);
 

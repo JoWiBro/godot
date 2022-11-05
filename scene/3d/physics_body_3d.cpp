@@ -92,12 +92,12 @@ void PhysicsBody3D::remove_collision_exception_with(Node *p_node) {
 }
 
 // (JWB)
-Vector3 PhysicsBody3D::_compute_linear_surface_velocity_conveyor(onst Vector3 &p_pos, const Vector3 &p_normal) {
+Vector3 PhysicsBody3D::_compute_linear_surface_velocity_conveyor(const Vector3 &p_pos, const Vector3 &p_normal) {
 	return surface_velocity_axis.cross(p_normal).normalized() * surface_velocity_speed;
 }
 
 // (JWB)
-Vector3 PhysicsBody3D::_compute_linear_surface_velocity_burrowing(onst Vector3 &p_pos, const Vector3 &p_normal) {
+Vector3 PhysicsBody3D::_compute_linear_surface_velocity_burrowing(const Vector3 &p_pos, const Vector3 &p_normal) {
 	Vector3 vel = surface_velocity_axis.normalized();
 	vel -= p_normal * p_normal.dot(vel);
 

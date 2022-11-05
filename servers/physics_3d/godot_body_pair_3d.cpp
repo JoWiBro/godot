@@ -582,7 +582,7 @@ void GodotBodyPair3D::solve(real_t p_step) {
 				}
 				*/
 
-				A->apply_impulse(-jtA, c.rA + A->get_center_of_mass());
+				A->apply_impulse(-jt, c.rA + A->get_center_of_mass());
 			}
 			if (collide_B) {
 				// (JWB)
@@ -599,7 +599,7 @@ void GodotBodyPair3D::solve(real_t p_step) {
 				}
 				*/
 
-				B->apply_impulse(jtB, c.rB + B->get_center_of_mass());
+				B->apply_impulse(jt, c.rB + B->get_center_of_mass());
 			}
 
 			c.active = true;

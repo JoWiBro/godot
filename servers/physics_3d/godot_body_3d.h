@@ -75,16 +75,10 @@ class GodotBody3D : public GodotCollisionObject3D {
 	Vector3 _inv_inertia; // Relative to the principal axes of inertia
 
 	// (JWB) Surface Velocity
-<<<<<<< Updated upstream
 	Callable compute_linear_surface_velocity_callback;
 	Callable compute_angular_surface_velocity_callback;
 	Callable handle_surface_velocity_result_callback;
 	real_t surface_velocity_force = -1;
-=======
-	real_t surface_velocity_ratio = 0.0;
-	Callable compute_surface_velocity_callback;
-	Callable handle_surface_velocity_result_callback;
->>>>>>> Stashed changes
 
 	// (JWB) Ether
 	Vector3 ether_velocity;
@@ -172,8 +166,8 @@ public:
 	void set_compute_angular_surface_velocity_callback(const Callable &p_callable);
 	void set_handle_surface_velocity_result_callback(const Callable &p_callable);
 
-	_FORCE_INLINE_ void set_surface_velocity_force(const Vector3 &p_force) { surface_velocity_force = p_force; }
-	_FORCE_INLINE_ Vector3 get_surface_velocity_force() const { return surface_velocity_force; }
+	_FORCE_INLINE_ void set_surface_velocity_force(real_t p_force) { surface_velocity_force = p_force; }
+	_FORCE_INLINE_ real_t get_surface_velocity_force() const { return surface_velocity_force; }
 
 	GodotPhysicsDirectBodyState3D *get_direct_state();
 
@@ -361,40 +355,36 @@ public:
 	// (JWB)
 	_FORCE_INLINE_ Vector3 compute_linear_surface_velocity(const Vector3 &p_pos, const Vector3 &p_normal) const {
 		if (compute_linear_surface_velocity_callback.get_object()) {
-			return compute_linear_surface_velocity_callback.callp(p_pos, p_normal);
-		}
-
-		return Vector3(0.0, 0.0, 0.0);
-	}
-
-	// (JWB)
-<<<<<<< Updated upstream
-	_FORCE_INLINE_ Vector3 compute_angular_surface_velocity(const Vector3 &p_pos, const Vector3 &p_normal) const {
-		if (compute_angular_surface_velocity_callback.get_object()) {
-			return compute_angular_surface_velocity_callback.callp(p_pos, p_normal);
-=======
-	_FORCE_INLINE_ Vector3 compute_surface_velocity(const Vector3 &p_pos, const Vector3 &p_normal) const {
-		if (compute_surface_velocity_callback.get_object()) {
 			Variant pos(p_pos);
 			Variant norm(p_normal);
 
 			const Variant *vp[2] = { &pos, &norm };
 			Callable::CallError ce;
 			Variant rv;
-			compute_surface_velocity_callback.callp(vp, 2, rv, ce);
+			compute_linear_surface_velocity_callback.callp(vp, 2, rv, ce);
 			return rv;
->>>>>>> Stashed changes
 		}
 
 		return Vector3(0.0, 0.0, 0.0);
 	}
 
 	// (JWB)
-<<<<<<< Updated upstream
-	_FORCE_INLINE_ void handle_surface_velocity_result(const Vector3 &p_pos, const Vector3 &p_normal, const Vector3 &p_velocity) {
-		if (handle_surface_velocity_result_callback.get_object()) {
-			handle_surface_velocity_result_callback.callp(p_pos, p_normal, p_velocity);
-=======
+	_FORCE_INLINE_ Vector3 compute_angular_surface_velocity(const Vector3 &p_pos, const Vector3 &p_normal) const {
+		if (compute_angular_surface_velocity_callback.get_object()) {
+			Variant pos(p_pos);
+			Variant norm(p_normal);
+
+			const Variant *vp[2] = { &pos, &norm };
+			Callable::CallError ce;
+			Variant rv;
+			compute_angular_surface_velocity_callback.callp(vp, 2, rv, ce);
+			return rv;
+		}
+
+		return Vector3(0.0, 0.0, 0.0);
+	}
+
+	// (JWB)
 	_FORCE_INLINE_ void handle_surface_velocity_result(const Vector3 &p_force, const Vector3 &p_pos) {
 		if (handle_surface_velocity_result_callback.get_object()) {
 			Variant force(p_force);
@@ -404,7 +394,6 @@ public:
 			Callable::CallError ce;
 			Variant rv;
 			handle_surface_velocity_result_callback.callp(vp, 2, rv, ce);
->>>>>>> Stashed changes
 		}
 	}
 

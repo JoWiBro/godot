@@ -380,6 +380,10 @@ public:
 	EXBIND2(body_set_state_sync_callback, RID, const Callable &)
 	EXBIND3(body_set_force_integration_callback, RID, const Callable &, const Variant &)
 
+	// (JWB)
+	EXBIND2(body_set_compute_linear_surface_velocity,RID, const Callable &);
+	EXBIND2(body_set_compute_angular_surface_velocity,RID, const Callable &);
+
 	EXBIND2(body_set_ray_pickable, RID, bool)
 
 	GDVIRTUAL7RC(bool, _body_test_motion, RID, const Transform3D &, const Vector3 &, real_t, int, bool, GDNativePtr<PhysicsServer3DExtensionMotionResult>)

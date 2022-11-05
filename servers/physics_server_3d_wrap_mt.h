@@ -258,6 +258,10 @@ public:
 	FUNC2(body_set_state_sync_callback, RID, const Callable &);
 	FUNC3(body_set_force_integration_callback, RID, const Callable &, const Variant &);
 
+	// (JWB)
+	FUNC2(body_set_compute_linear_surface_velocity,RID, const Callable &);
+	FUNC2(body_set_compute_angular_surface_velocity,RID, const Callable &);
+
 	FUNC2(body_set_ray_pickable, RID, bool);
 
 	bool body_test_motion(RID p_body, const MotionParameters &p_parameters, MotionResult *r_result = nullptr) override {

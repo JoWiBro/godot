@@ -291,6 +291,9 @@ void PhysicsServer3DExtension::_bind_methods() {
 	GDVIRTUAL_BIND(_body_set_state_sync_callback, "body", "callable");
 	GDVIRTUAL_BIND(_body_set_force_integration_callback, "body", "callable", "userdata");
 
+	GDVIRTUAL_BIND(_body_set_compute_linear_surface_velocity, "body", "callable");
+	GDVIRTUAL_BIND(_body_set_compute_angular_surface_velocity, "body", "callable");
+
 	GDVIRTUAL_BIND(_body_set_ray_pickable, "body", "enable");
 
 	GDVIRTUAL_BIND(_body_test_motion, "body", "from", "motion", "margin", "max_collisions", "collide_separation_ray", "result");
