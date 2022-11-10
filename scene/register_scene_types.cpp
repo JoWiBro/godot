@@ -257,6 +257,7 @@
 #include "scene/3d/soft_body_3d.h"
 #include "scene/3d/spring_arm_3d.h"
 #include "scene/3d/sprite_3d.h"
+#include "scene/3d/surface_velocity_3d.h"
 #include "scene/3d/vehicle_body_3d.h"
 #include "scene/3d/visible_on_screen_notifier_3d.h"
 #include "scene/3d/voxel_gi.h"
@@ -532,6 +533,9 @@ void register_scene_types() {
 	GDREGISTER_CLASS(CPUParticles3D);
 	GDREGISTER_CLASS(Marker3D);
 	GDREGISTER_CLASS(RootMotionView);
+	GDREGISTER_ABSTRACT_CLASS(SurfaceVelocity3D);
+	GDREGISTER_CLASS(SurfaceVelocity3DConveyor);
+	GDREGISTER_CLASS(SurfaceVelocity3DBurrow);
 
 	OS::get_singleton()->yield(); // may take time to init
 

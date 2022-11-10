@@ -91,19 +91,6 @@ void PhysicsBody3D::remove_collision_exception_with(Node *p_node) {
 	PhysicsServer3D::get_singleton()->body_remove_collision_exception(get_rid(), collision_object->get_rid());
 }
 
-// (JWB)
-Vector3 PhysicsBody3D::_compute_linear_surface_velocity_conveyor(const Vector3 &p_pos, const Vector3 &p_normal) {
-	return surface_velocity_axis.cross(p_normal).normalized() * surface_velocity_speed;
-}
-
-// (JWB)
-Vector3 PhysicsBody3D::_compute_linear_surface_velocity_burrowing(const Vector3 &p_pos, const Vector3 &p_normal) {
-	Vector3 vel = surface_velocity_axis.normalized();
-	vel -= p_normal * p_normal.dot(vel);
-
-	return vel * surface_velocity_speed;
-}
-
 Ref<KinematicCollision3D> PhysicsBody3D::_move(const Vector3 &p_distance, bool p_test_only, real_t p_margin, bool p_recovery_as_collision, int p_max_collisions) {
 	PhysicsServer3D::MotionParameters parameters(get_global_transform(), p_distance, p_margin);
 	parameters.max_collisions = p_max_collisions;

@@ -473,6 +473,20 @@
 			<description>
 			</description>
 		</method>
+		<method name="_body_set_compute_angular_surface_velocity" qualifiers="virtual">
+			<return type="void" />
+			<param index="0" name="body" type="RID" />
+			<param index="1" name="callable" type="Callable" />
+			<description>
+			</description>
+		</method>
+		<method name="_body_set_compute_linear_surface_velocity" qualifiers="virtual">
+			<return type="void" />
+			<param index="0" name="body" type="RID" />
+			<param index="1" name="callable" type="Callable" />
+			<description>
+			</description>
+		</method>
 		<method name="_body_set_constant_force" qualifiers="virtual">
 			<return type="void" />
 			<param index="0" name="body" type="RID" />
