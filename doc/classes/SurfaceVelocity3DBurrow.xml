@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SurfaceVelocity3DBurrow" inherits="SurfaceVelocity3D" version="4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="burrow_direction" type="Vector3" setter="set_burrow_direction" getter="get_burrow_direction" default="Vector3(0, 0, 0)">
+		</member>
+		<member name="burrow_direction_relative" type="bool" setter="set_burrow_direction_relative" getter="get_burrow_direction_relative" default="false">
+		</member>
+	</members>
+</class>

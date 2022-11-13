@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <class name="SurfaceVelocity3D" inherits="Node" version="4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
 	<brief_description>
-		Change collision surface speed.
 	</brief_description>
 	<description>
 	</description>
 	<tutorials>
 	</tutorials>
+	<members>
+		<member name="surface_speed" type="float" setter="set_surface_speed" getter="get_surface_speed" default="1.0">
+		</member>
+	</members>
 </class>

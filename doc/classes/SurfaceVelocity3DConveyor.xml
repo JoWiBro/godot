@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SurfaceVelocity3DConveyor" inherits="SurfaceVelocity3D" version="4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="conveyor_axis" type="Vector3" setter="set_conveyor_axis" getter="get_conveyor_axis" default="Vector3(0, 0, 0)">
+		</member>
+		<member name="conveyor_axis_relative" type="bool" setter="set_conveyor_axis_relative" getter="get_conveyor_axis_relative" default="false">
+		</member>
+	</members>
+</class>

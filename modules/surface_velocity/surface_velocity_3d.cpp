@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2022 Joshua Brodie.                                */
 /* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
@@ -47,21 +47,21 @@ SurfaceVelocity3D::~SurfaceVelocity3D() {}
 
 
 
-void SurfaceVelocity3DConveyor::_set_callable_enebled(bool enabled) {
+void SurfaceVelocityConveyor3D::_set_callable_enebled(bool enabled) {
 
     if(enabled == is_callable_enabled) return;
     is_callable_enabled = enabled;
 
     if(physics_body != nullptr) {
         if(is_callable_enabled) {
-            PhysicsServer3D::get_singleton()->body_set_compute_linear_surface_velocity(physics_body->get_rid(), callable_mp(this, &SurfaceVelocity3DConveyor::_compute_linear_surface_velocity_conveyor));
+            PhysicsServer3D::get_singleton()->body_set_compute_linear_surface_velocity(physics_body->get_rid(), callable_mp(this, &SurfaceVelocityConveyor3D::_compute_linear_surface_velocity_conveyor));
         } else {
             PhysicsServer3D::get_singleton()->body_set_compute_linear_surface_velocity(physics_body->get_rid(), Callable());
         }
     }
 }
 
-void SurfaceVelocity3DConveyor::_notification(int p_notification) {
+void SurfaceVelocityConveyor3D::_notification(int p_notification) {
     switch(p_notification) {
         case NOTIFICATION_ENTER_TREE: {
             physics_body = Object::cast_to<PhysicsBody3D>(get_parent());
@@ -91,33 +91,33 @@ void SurfaceVelocity3DConveyor::_notification(int p_notification) {
     Node::_notification(p_notification);
 }
 
-void SurfaceVelocity3DConveyor::_bind_methods() {
-    ClassDB::bind_method(D_METHOD("set_conveyor_axis", "axis"), &SurfaceVelocity3DConveyor::set_conveyor_axis);
-	ClassDB::bind_method(D_METHOD("get_conveyor_axis"), &SurfaceVelocity3DConveyor::get_conveyor_axis);
-    ClassDB::bind_method(D_METHOD("set_conveyor_axis_relative", "relative"), &SurfaceVelocity3DConveyor::set_conveyor_axis_relative);
-	ClassDB::bind_method(D_METHOD("get_conveyor_axis_relative"), &SurfaceVelocity3DConveyor::get_conveyor_axis_relative);
+void SurfaceVelocityConveyor3D::_bind_methods() {
+    ClassDB::bind_method(D_METHOD("set_conveyor_axis", "axis"), &SurfaceVelocityConveyor3D::set_conveyor_axis);
+	ClassDB::bind_method(D_METHOD("get_conveyor_axis"), &SurfaceVelocityConveyor3D::get_conveyor_axis);
+    ClassDB::bind_method(D_METHOD("set_conveyor_axis_relative", "relative"), &SurfaceVelocityConveyor3D::set_conveyor_axis_relative);
+	ClassDB::bind_method(D_METHOD("get_conveyor_axis_relative"), &SurfaceVelocityConveyor3D::get_conveyor_axis_relative);
 
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "conveyor_axis"), "set_conveyor_axis", "get_conveyor_axis");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "conveyor_axis_relative"), "set_conveyor_axis_relative", "get_conveyor_axis_relative");
 }
 
-void SurfaceVelocity3DConveyor::set_conveyor_axis(const Vector3 &p_axis) {
+void SurfaceVelocityConveyor3D::set_conveyor_axis(const Vector3 &p_axis) {
     conveyor_axis = p_axis;
 }
 
-Vector3 SurfaceVelocity3DConveyor::get_conveyor_axis() const {
+Vector3 SurfaceVelocityConveyor3D::get_conveyor_axis() const {
     return conveyor_axis;
 }
 
-void SurfaceVelocity3DConveyor::set_conveyor_axis_relative(bool p_relative) {
+void SurfaceVelocityConveyor3D::set_conveyor_axis_relative(bool p_relative) {
     conveyor_axis_relative = p_relative;
 }
 
-bool SurfaceVelocity3DConveyor::get_conveyor_axis_relative() const {
+bool SurfaceVelocityConveyor3D::get_conveyor_axis_relative() const {
     return conveyor_axis_relative;
 }
 
-Vector3 SurfaceVelocity3DConveyor::_compute_linear_surface_velocity_conveyor(const Vector3 &p_pos, const Vector3 &p_normal) {
+Vector3 SurfaceVelocityConveyor3D::_compute_linear_surface_velocity_conveyor(const Vector3 &p_pos, const Vector3 &p_normal) {
 
     Vector3 axis = conveyor_axis;
 
@@ -128,29 +128,29 @@ Vector3 SurfaceVelocity3DConveyor::_compute_linear_surface_velocity_conveyor(con
 	return axis.cross(p_normal).normalized() * get_surface_speed();
 }
 
-SurfaceVelocity3DConveyor::SurfaceVelocity3DConveyor() : SurfaceVelocity3D() {}
+SurfaceVelocityConveyor3D::SurfaceVelocityConveyor3D() : SurfaceVelocity3D() {}
 
-SurfaceVelocity3DConveyor::~SurfaceVelocity3DConveyor() {
+SurfaceVelocityConveyor3D::~SurfaceVelocityConveyor3D() {
     _set_callable_enebled(false);
 }
 
 
 
-void SurfaceVelocity3DBurrow::_set_callable_enebled(bool enabled) {
+void SurfaceVelocityBurrow3D::_set_callable_enebled(bool enabled) {
 
     if(enabled == is_callable_enabled) return;
     is_callable_enabled = enabled;
 
     if(physics_body != nullptr) {
         if(is_callable_enabled) {
-            PhysicsServer3D::get_singleton()->body_set_compute_linear_surface_velocity(physics_body->get_rid(), callable_mp(this, &SurfaceVelocity3DBurrow::_compute_linear_surface_velocity_burrow));
+            PhysicsServer3D::get_singleton()->body_set_compute_linear_surface_velocity(physics_body->get_rid(), callable_mp(this, &SurfaceVelocityBurrow3D::_compute_linear_surface_velocity_burrow));
         } else {
             PhysicsServer3D::get_singleton()->body_set_compute_linear_surface_velocity(physics_body->get_rid(), Callable());
         }
     }
 }
 
-void SurfaceVelocity3DBurrow::_notification(int p_notification) {
+void SurfaceVelocityBurrow3D::_notification(int p_notification) {
     switch(p_notification) {
         case NOTIFICATION_ENTER_TREE: {
             physics_body = Object::cast_to<PhysicsBody3D>(get_parent());
@@ -180,33 +180,33 @@ void SurfaceVelocity3DBurrow::_notification(int p_notification) {
     Node::_notification(p_notification);
 }
 
-void SurfaceVelocity3DBurrow::_bind_methods() {
-    ClassDB::bind_method(D_METHOD("set_burrow_direction", "direction"), &SurfaceVelocity3DBurrow::set_burrow_direction);
-	ClassDB::bind_method(D_METHOD("get_burrow_direction"), &SurfaceVelocity3DBurrow::get_burrow_direction);
-    ClassDB::bind_method(D_METHOD("set_burrow_direction_relative", "relative"), &SurfaceVelocity3DBurrow::set_burrow_direction_relative);
-	ClassDB::bind_method(D_METHOD("get_burrow_direction_relative"), &SurfaceVelocity3DBurrow::get_burrow_direction_relative);
+void SurfaceVelocityBurrow3D::_bind_methods() {
+    ClassDB::bind_method(D_METHOD("set_burrow_direction", "direction"), &SurfaceVelocityBurrow3D::set_burrow_direction);
+	ClassDB::bind_method(D_METHOD("get_burrow_direction"), &SurfaceVelocityBurrow3D::get_burrow_direction);
+    ClassDB::bind_method(D_METHOD("set_burrow_direction_relative", "relative"), &SurfaceVelocityBurrow3D::set_burrow_direction_relative);
+	ClassDB::bind_method(D_METHOD("get_burrow_direction_relative"), &SurfaceVelocityBurrow3D::get_burrow_direction_relative);
 
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "burrow_direction"), "set_burrow_direction", "get_burrow_direction");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "burrow_direction_relative"), "set_burrow_direction_relative", "get_burrow_direction_relative");
 }
 
-void SurfaceVelocity3DBurrow::set_burrow_direction(const Vector3 &p_dir) {
+void SurfaceVelocityBurrow3D::set_burrow_direction(const Vector3 &p_dir) {
     burrow_direction = p_dir;
 }
 
-Vector3 SurfaceVelocity3DBurrow::get_burrow_direction() const {
+Vector3 SurfaceVelocityBurrow3D::get_burrow_direction() const {
     return burrow_direction;
 }
 
-void SurfaceVelocity3DBurrow::set_burrow_direction_relative(bool p_relative) {
+void SurfaceVelocityBurrow3D::set_burrow_direction_relative(bool p_relative) {
     burrow_direction_relative = p_relative;
 }
 
-bool SurfaceVelocity3DBurrow::get_burrow_direction_relative() const {
+bool SurfaceVelocityBurrow3D::get_burrow_direction_relative() const {
     return burrow_direction_relative;
 }
 
-Vector3 SurfaceVelocity3DBurrow::_compute_linear_surface_velocity_burrow(const Vector3 &p_pos, const Vector3 &p_normal) {
+Vector3 SurfaceVelocityBurrow3D::_compute_linear_surface_velocity_burrow(const Vector3 &p_pos, const Vector3 &p_normal) {
 
     Vector3 dir = burrow_direction;
 
@@ -220,8 +220,8 @@ Vector3 SurfaceVelocity3DBurrow::_compute_linear_surface_velocity_burrow(const V
 	return dir * get_surface_speed();
 }
 
-SurfaceVelocity3DBurrow::SurfaceVelocity3DBurrow() : SurfaceVelocity3D() {}
+SurfaceVelocityBurrow3D::SurfaceVelocityBurrow3D() : SurfaceVelocity3D() {}
 
-SurfaceVelocity3DBurrow::~SurfaceVelocity3DBurrow() {
+SurfaceVelocityBurrow3D::~SurfaceVelocityBurrow3D() {
     _set_callable_enebled(false);
 }
