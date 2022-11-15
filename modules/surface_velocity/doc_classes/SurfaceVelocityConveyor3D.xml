@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<class name="SurfaceVelocity3DConveyor" inherits="SurfaceVelocity3D" version="4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+<class name="SurfaceVelocityConveyor3D" inherits="SurfaceVelocity3D" version="4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
 	<brief_description>
+	Conveyor belt surface.
 	</brief_description>
 	<description>
+	Moves the surface of this physics body around the axis like a conveyor belt.
 	</description>
 	<tutorials>
 	</tutorials>

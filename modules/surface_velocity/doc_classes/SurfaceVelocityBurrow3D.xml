@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<class name="SurfaceVelocity3DBurrow" inherits="SurfaceVelocity3D" version="4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+<class name="SurfaceVelocityBurrow3D" inherits="SurfaceVelocity3D" version="4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
 	<brief_description>
+	Burrowing surface movement.
 	</brief_description>
 	<description>
+	Moves the surface of the physics body like the object is trying to burrow through the scen by pushing against all other surfaces toward the given direction vector.
 	</description>
 	<tutorials>
 	</tutorials>

@@ -57,7 +57,7 @@ public:
 class SurfaceVelocityConveyor3D: public SurfaceVelocity3D {
 	GDCLASS(SurfaceVelocityConveyor3D, SurfaceVelocity3D);
 
-	Vector3 conveyor_axis;
+	Vector3 conveyor_axis = Vector3(0.0, 0.0, 1.0);
 	bool conveyor_axis_relative = false;
 
 	bool is_callable_enabled = false;
@@ -84,7 +84,7 @@ public:
 class SurfaceVelocityBurrow3D: public SurfaceVelocity3D {
 	GDCLASS(SurfaceVelocityBurrow3D, SurfaceVelocity3D);
 
-	Vector3 burrow_direction;
+	Vector3 burrow_direction = Vector3(1.0, 0.0, 0.0);
 	bool burrow_direction_relative = false;
 	
 	bool is_callable_enabled = false;
