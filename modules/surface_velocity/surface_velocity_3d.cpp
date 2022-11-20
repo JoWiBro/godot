@@ -41,6 +41,16 @@ void SurfaceVelocity3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "surface_speed"), "set_surface_speed", "get_surface_speed");
 }
 
+PackedStringArray SurfaceVelocity3D::get_configuration_warnings() const {
+	PackedStringArray warnings = Node::get_configuration_warnings();
+
+	if (physics_body == nullptr) {
+		warnings.push_back(RTR("Parent node has no physics body, so the surface velocity can not be applied to it.\nMake sure that the parent node inherits from the PhysicsBody3D node."));
+	}
+
+	return warnings;
+}
+
 SurfaceVelocity3D::SurfaceVelocity3D() : Node() {}
 
 SurfaceVelocity3D::~SurfaceVelocity3D() {}

@@ -50,6 +50,8 @@ public:
 	void set_surface_speed(double p_speed);
 	double get_surface_speed() const;
 
+	PackedStringArray get_configuration_warnings() const override;
+
 	SurfaceVelocity3D();
 	~SurfaceVelocity3D();
 };
