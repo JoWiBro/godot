@@ -35,10 +35,10 @@
 #include "editor/editor_inspector.h"
 #include "editor/editor_node.h"
 #include "editor/editor_scale.h"
+#include "editor/editor_settings.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/progress_dialog.h"
 
-#include "editor/editor_node.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
 #include "scene/gui/control.h"
@@ -152,7 +152,7 @@ bool TileSetAtlasSourceEditor::AtlasTileProxyObject::_set(const StringName &p_na
 
 	// ID and size related properties.
 	if (tiles.size() == 1) {
-		const Vector2i &coords = tiles.front()->get().tile;
+		const Vector2i coords = tiles.front()->get().tile;
 		const int &alternative = tiles.front()->get().alternative;
 
 		if (alternative == 0) {
@@ -543,11 +543,13 @@ void TileSetAtlasSourceEditor::_update_source_inspector() {
 
 void TileSetAtlasSourceEditor::_update_fix_selected_and_hovered_tiles() {
 	// Fix selected.
-	for (RBSet<TileSelection>::Element *E = selection.front(); E; E = E->next()) {
+	for (RBSet<TileSelection>::Element *E = selection.front(); E;) {
+		RBSet<TileSelection>::Element *N = E->next();
 		TileSelection selected = E->get();
 		if (!tile_set_atlas_source->has_tile(selected.tile) || !tile_set_atlas_source->has_alternative_tile(selected.tile, selected.alternative)) {
 			selection.erase(E);
 		}
+		E = N;
 	}
 
 	// Fix hovered.
@@ -2341,6 +2343,15 @@ void TileSetAtlasSourceEditor::_notification(int p_what) {
 				_update_current_tile_data_editor();
 
 				tile_set_changed_needs_update = false;
+			}
+		} break;
+
+		case NOTIFICATION_EXIT_TREE: {
+			for (KeyValue<String, TileDataEditor *> &E : tile_data_editors) {
+				Control *toolbar = E.value->get_toolbar();
+				if (toolbar->get_parent() == tool_settings_tile_data_toolbar_container) {
+					tool_settings_tile_data_toolbar_container->remove_child(toolbar);
+				}
 			}
 		} break;
 	}
