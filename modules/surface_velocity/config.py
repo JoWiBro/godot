@@ -11,4 +11,5 @@ def get_doc_classes():
     return [
         "SurfaceVelocityConveyor3D",
         "SurfaceVelocityBurrow3D",
+        "SurfaceVelocityWalk3D"
     ]
