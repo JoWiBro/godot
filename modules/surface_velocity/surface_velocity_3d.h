@@ -110,4 +110,47 @@ public:
 	~SurfaceVelocityBurrow3D();
 };
 
+
+class SurfaceVelocityWalk3D: public SurfaceVelocity3D {
+	GDCLASS(SurfaceVelocityWalk3D, SurfaceVelocity3D);
+
+	Vector3 walk_direction = Vector3(1.0, 0.0, 0.0);
+	bool walk_direction_relative = false;
+	
+	Vector3 walk_up = Vector3(0.0, 1.0, 0.0);
+	bool walk_up_relative = false;
+
+	real_t walk_turn_speed = 0.0;
+	
+	bool is_callable_enabled = false;
+	void _set_callable_enebled(bool enabled);
+
+protected:
+	void _notification(int p_notification);
+	static void _bind_methods();
+
+	Vector3 _compute_linear_surface_velocity_walk(const Vector3 &p_pos, const Vector3 &p_normal);
+	//Vector3 _compute_angular_surface_velocity_walk(const Vector3 &p_pos, const Vector3 &p_normal);
+
+public:
+
+	void set_walk_direction(const Vector3 &p_dir);
+	Vector3 get_walk_direction() const;
+
+	void set_walk_direction_relative(bool p_relative);
+	bool get_walk_direction_relative() const;
+
+	void set_walk_up(const Vector3 &p_up);
+	Vector3 get_walk_up() const;
+
+	void set_walk_up_relative(bool p_relative);
+	bool get_walk_up_relative() const;
+
+	void set_walk_turn_speed(real_t p_turn);
+	real_t get_walk_turn_speed() const;
+
+	SurfaceVelocityWalk3D();
+	~SurfaceVelocityWalk3D();
+};
+
 #endif // SURFACE_VELOCITY_3D_H

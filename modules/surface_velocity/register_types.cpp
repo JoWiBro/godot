@@ -40,6 +40,8 @@ void initialize_surface_velocity_module(ModuleInitializationLevel p_level) {
 	GDREGISTER_ABSTRACT_CLASS(SurfaceVelocity3D);
 	GDREGISTER_CLASS(SurfaceVelocityConveyor3D);
 	GDREGISTER_CLASS(SurfaceVelocityBurrow3D);
+	GDREGISTER_CLASS(SurfaceVelocityWalk3D);
+
 }
 
 void uninitialize_surface_velocity_module(ModuleInitializationLevel p_level) {
