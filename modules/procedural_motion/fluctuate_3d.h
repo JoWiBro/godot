@@ -28,6 +28,7 @@
 #define FLUCTUATE_3D_H
 
 #include "scene/3d/node_3d.h"
+#include "modules/game_frame/math_defs.h"
 
 class Fluctuate3D : public Node3D {
 	GDCLASS(Fluctuate3D, Node3D);
@@ -40,35 +41,31 @@ class Fluctuate3D : public Node3D {
 		void reset(double p_time, const Vector3 &p_axis);
 	};
 
-	short fluctuate_axis_count = 3;
-	double fluctuate_axis_lifetime = 10.0;
+	const short _fluctuate_axis_count = 3;
+	double _fluctuate_axis_lifetime = 1.0;
 	short fluctuate_iterations = 3;
-	real_t fluctuate_iteration_ratio = 1.61803398875;// golden ratio
+	real_t fluctuate_iteration_ratio = GOLDEN_RATIO;
 	real_t fluctuate_frequency = 0.5;
 
 	bool translation_enabled = true;
 	real_t translation_magnitude = 1.0;
-	Vector<Fluctuation> translation_array;
+	Vector<Fluctuation> _translation_array;
 
-	Basis offset;
+	Transform3D offset_transform;
+
+	real_t _compute_axis_length(const Vector3 &p_axis, const Vector3 &p_vec) const;
 
 protected:
 	void _notification(int p_notification);
 	static void _bind_methods();
 
-	Vector3 _compute_random_axis_vector() const;
+	Vector3 _compute_axis_vector(const Fluctuation &p_flux) const;
 
 	void _translation_setup();
 	void _translation_process(double p_delta);
 	void _translation_clear();
 
 public:
-
-	void set_fluctuate_axis_count(short p_count);
-	short get_fluctuate_axis_count() const;
-
-	void set_fluctuate_axis_lifetime(double p_lifetime);
-	double get_fluctuate_axis_lifetime() const;
 
 	void set_fluctuate_iterations(short p_iterations);
 	short get_fluctuate_iterations() const;
@@ -84,6 +81,9 @@ public:
 
 	void set_translation_magnitude(real_t p_magnitude);
 	real_t get_translation_magnitude() const;
+
+	void set_offset_transform(Transform3D &p_offset);
+	Transform3D get_offset_transform() const;
 
 	PackedStringArray get_configuration_warnings() const override;
 
