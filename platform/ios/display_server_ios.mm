@@ -227,27 +227,23 @@ void DisplayServerIOS::_window_callback(const Callable &p_callable, const Varian
 // MARK: Touches
 
 void DisplayServerIOS::touch_press(int p_idx, int p_x, int p_y, bool p_pressed, bool p_double_click) {
-	if (!GLOBAL_GET("debug/disable_touch")) {
-		Ref<InputEventScreenTouch> ev;
-		ev.instantiate();
+	Ref<InputEventScreenTouch> ev;
+	ev.instantiate();
 
-		ev->set_index(p_idx);
-		ev->set_pressed(p_pressed);
-		ev->set_position(Vector2(p_x, p_y));
-		ev->set_double_tap(p_double_click);
-		perform_event(ev);
-	}
+	ev->set_index(p_idx);
+	ev->set_pressed(p_pressed);
+	ev->set_position(Vector2(p_x, p_y));
+	ev->set_double_tap(p_double_click);
+	perform_event(ev);
 }
 
 void DisplayServerIOS::touch_drag(int p_idx, int p_prev_x, int p_prev_y, int p_x, int p_y) {
-	if (!GLOBAL_GET("debug/disable_touch")) {
-		Ref<InputEventScreenDrag> ev;
-		ev.instantiate();
-		ev->set_index(p_idx);
-		ev->set_position(Vector2(p_x, p_y));
-		ev->set_relative(Vector2(p_x - p_prev_x, p_y - p_prev_y));
-		perform_event(ev);
-	}
+	Ref<InputEventScreenDrag> ev;
+	ev.instantiate();
+	ev->set_index(p_idx);
+	ev->set_position(Vector2(p_x, p_y));
+	ev->set_relative(Vector2(p_x - p_prev_x, p_y - p_prev_y));
+	perform_event(ev);
 }
 
 void DisplayServerIOS::perform_event(const Ref<InputEvent> &p_event) {
@@ -260,14 +256,14 @@ void DisplayServerIOS::touches_cancelled(int p_idx) {
 
 // MARK: Keyboard
 
-void DisplayServerIOS::key(Key p_key, bool p_pressed) {
+void DisplayServerIOS::key(Key p_key, char32_t p_char, bool p_pressed) {
 	Ref<InputEventKey> ev;
 	ev.instantiate();
 	ev->set_echo(false);
 	ev->set_pressed(p_pressed);
 	ev->set_keycode(p_key);
 	ev->set_physical_keycode(p_key);
-	ev->set_unicode((char32_t)p_key);
+	ev->set_unicode(p_char);
 	perform_event(ev);
 }
 
@@ -441,7 +437,7 @@ float DisplayServerIOS::screen_get_refresh_rate(int p_screen) const {
 }
 
 float DisplayServerIOS::screen_get_scale(int p_screen) const {
-	return [UIScreen mainScreen].nativeScale;
+	return [UIScreen mainScreen].scale;
 }
 
 Vector<DisplayServer::WindowID> DisplayServerIOS::get_window_list() const {
@@ -589,6 +585,16 @@ bool DisplayServerIOS::is_touchscreen_available() const {
 	return true;
 }
 
+_FORCE_INLINE_ int _convert_utf32_offset_to_utf16(const String &p_existing_text, int p_pos) {
+	int limit = p_pos;
+	for (int i = 0; i < MIN(p_existing_text.length(), p_pos); i++) {
+		if (p_existing_text[i] > 0xffff) {
+			limit++;
+		}
+	}
+	return limit;
+}
+
 void DisplayServerIOS::virtual_keyboard_show(const String &p_existing_text, const Rect2 &p_screen_rect, VirtualKeyboardType p_type, int p_max_length, int p_cursor_start, int p_cursor_end) {
 	NSString *existingString = [[NSString alloc] initWithUTF8String:p_existing_text.utf8().get_data()];
 
@@ -627,8 +633,8 @@ void DisplayServerIOS::virtual_keyboard_show(const String &p_existing_text, cons
 
 	[AppDelegate.viewController.keyboardView
 			becomeFirstResponderWithString:existingString
-							   cursorStart:p_cursor_start
-								 cursorEnd:p_cursor_end];
+							   cursorStart:_convert_utf32_offset_to_utf16(p_existing_text, p_cursor_start)
+								 cursorEnd:_convert_utf32_offset_to_utf16(p_existing_text, p_cursor_end)];
 }
 
 void DisplayServerIOS::virtual_keyboard_hide() {

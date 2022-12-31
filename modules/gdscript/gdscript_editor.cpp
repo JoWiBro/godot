@@ -1612,7 +1612,7 @@ static bool _guess_expression_type(GDScriptParser::CompletionContext &p_context,
 						}
 					}
 
-					if (!found) {
+					if (!found && base.value.get_type() != Variant::NIL) {
 						found = _guess_method_return_type_from_base(c, base, call->function_name, r_type);
 					}
 				}
@@ -2272,6 +2272,11 @@ static bool _guess_method_return_type_from_base(GDScriptParser::CompletionContex
 				if (base_type.class_type->has_function(p_method)) {
 					const GDScriptParser::FunctionNode *method = base_type.class_type->get_member(p_method).function;
 					if (!is_static || method->is_static) {
+						if (method->get_datatype().is_set() && !method->get_datatype().is_variant()) {
+							r_type.type = method->get_datatype();
+							return true;
+						}
+
 						int last_return_line = -1;
 						const GDScriptParser::ExpressionNode *last_returned_value = nullptr;
 						GDScriptParser::CompletionContext c = p_context;
@@ -2283,10 +2288,6 @@ static bool _guess_method_return_type_from_base(GDScriptParser::CompletionContex
 						if (last_returned_value) {
 							c.current_line = c.current_suite->end_line;
 							if (_guess_expression_type(c, last_returned_value, r_type)) {
-								return true;
-							}
-							if (method->get_datatype().is_set() && !method->get_datatype().is_variant()) {
-								r_type.type = method->get_datatype();
 								return true;
 							}
 						}
@@ -2845,16 +2846,6 @@ static void _find_call_arguments(GDScriptParser::CompletionContext &p_context, c
 			GDScriptCompletionIdentifier base;
 			if (!_guess_expression_type(completion_context, subscript->base, base)) {
 				break;
-			}
-
-			GDScriptParser::CompletionContext c = completion_context;
-			c.current_function = nullptr;
-			c.current_suite = nullptr;
-			c.base = base.value.get_type() == Variant::OBJECT ? base.value.operator Object *() : nullptr;
-			if (base.type.kind == GDScriptParser::DataType::CLASS) {
-				c.current_class = base.type.class_type;
-			} else {
-				c.current_class = nullptr;
 			}
 
 			_find_identifiers_in_base(base, false, options, 0);

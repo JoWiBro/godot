@@ -1068,10 +1068,6 @@ void RasterizerSceneGLES3::environment_glow_set_use_bicubic_upscale(bool p_enabl
 	glow_bicubic_upscale = p_enable;
 }
 
-void RasterizerSceneGLES3::environment_glow_set_use_high_quality(bool p_enable) {
-	glow_high_quality = p_enable;
-}
-
 void RasterizerSceneGLES3::environment_set_ssr_roughness_quality(RS::EnvironmentSSRRoughnessQuality p_quality) {
 }
 
@@ -1174,12 +1170,17 @@ void RasterizerSceneGLES3::_fill_render_list(RenderListType p_render_list, const
 	for (int i = 0; i < (int)p_render_data->instances->size(); i++) {
 		GeometryInstanceGLES3 *inst = static_cast<GeometryInstanceGLES3 *>((*p_render_data->instances)[i]);
 
+		Vector3 center = inst->transform.origin;
 		if (p_render_data->cam_orthogonal) {
-			Vector3 support_min = inst->transformed_aabb.get_support(-near_plane.normal);
-			inst->depth = near_plane.distance_to(support_min);
+			if (inst->use_aabb_center) {
+				center = inst->transformed_aabb.get_support(-near_plane.normal);
+			}
+			inst->depth = near_plane.distance_to(center) - inst->sorting_offset;
 		} else {
-			Vector3 aabb_center = inst->transformed_aabb.position + (inst->transformed_aabb.size * 0.5);
-			inst->depth = p_render_data->cam_transform.origin.distance_to(aabb_center);
+			if (inst->use_aabb_center) {
+				center = inst->transformed_aabb.position + (inst->transformed_aabb.size * 0.5);
+			}
+			inst->depth = p_render_data->cam_transform.origin.distance_to(center) - inst->sorting_offset;
 		}
 		uint32_t depth_layer = CLAMP(int(inst->depth * 16 / z_max), 0, 15);
 
@@ -1743,7 +1744,7 @@ void RasterizerSceneGLES3::render_scene(const Ref<RenderSceneBuffers> &p_render_
 		render_data.reflection_probes = &empty;
 	}
 
-	bool reverse_cull = false;
+	bool reverse_cull = render_data.cam_transform.basis.determinant() < 0;
 
 	///////////
 	// Fill Light lists here
@@ -2210,10 +2211,13 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters *p_params,
 				glBindVertexArray(vertex_array_gl);
 			}
 			prev_vertex_array_gl = vertex_array_gl;
+
+			// Invalidate the previous index array
+			prev_index_array_gl = 0;
 		}
 
 		bool use_index_buffer = index_array_gl != 0;
-		if (prev_index_array_gl != index_array_gl || prev_vertex_array_gl != vertex_array_gl) {
+		if (prev_index_array_gl != index_array_gl) {
 			if (index_array_gl != 0) {
 				// Bind index each time so we can use LODs
 				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_array_gl);

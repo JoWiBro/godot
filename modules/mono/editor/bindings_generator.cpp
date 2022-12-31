@@ -2489,9 +2489,12 @@ Error BindingsGenerator::_generate_cs_native_calls(const InternalCall &p_icall, 
 
 			if (!ret_void) {
 				if (return_type->cname != name_cache.type_Variant) {
+					// Usually the return value takes ownership, but in this case the variant is only used
+					// for conversion to another return type. As such, the local variable takes ownership.
 					r_output << "using godot_variant " << C_LOCAL_VARARG_RET " = ";
 				} else {
-					r_output << "using godot_variant " << C_LOCAL_RET " = ";
+					// Variant's [c_out] takes ownership of the variant value
+					r_output << "godot_variant " << C_LOCAL_RET " = ";
 				}
 			}
 
@@ -3647,11 +3650,11 @@ void BindingsGenerator::_populate_builtin_type_interfaces() {
 	itype = TypeInterface();
 	itype.name = "Signal";
 	itype.cname = itype.name;
-	itype.proxy_name = "SignalInfo";
+	itype.proxy_name = "Signal";
 	itype.cs_type = itype.proxy_name;
 	itype.cs_in_expr = "%0";
 	itype.c_in = "%5using %0 %1_in = " C_METHOD_MANAGED_TO_SIGNAL "(in %1);\n";
-	itype.c_out = "%5return " C_METHOD_MANAGED_FROM_SIGNAL "(&%1);\n";
+	itype.c_out = "%5return " C_METHOD_MANAGED_FROM_SIGNAL "(in %1);\n";
 	itype.c_arg_in = "&%s_in";
 	itype.c_type = "godot_signal";
 	itype.c_type_in = "in " + itype.cs_type;
@@ -3729,7 +3732,7 @@ void BindingsGenerator::_populate_builtin_type_interfaces() {
 	itype.cname = itype.name;
 	itype.cs_out = "%5return new %2(%0(%1));";
 	// For generic Godot collections, Variant.From<T>/As<T> is slower, so we need this special case
-	itype.cs_variant_to_managed = "VariantUtils.ConvertToArrayObject(%0)";
+	itype.cs_variant_to_managed = "VariantUtils.ConvertToArray(%0)";
 	itype.cs_managed_to_variant = "VariantUtils.CreateFromArray(%0)";
 	builtin_types.insert(itype.cname, itype);
 
@@ -3756,7 +3759,7 @@ void BindingsGenerator::_populate_builtin_type_interfaces() {
 	itype.cname = itype.name;
 	itype.cs_out = "%5return new %2(%0(%1));";
 	// For generic Godot collections, Variant.From<T>/As<T> is slower, so we need this special case
-	itype.cs_variant_to_managed = "VariantUtils.ConvertToDictionaryObject(%0)";
+	itype.cs_variant_to_managed = "VariantUtils.ConvertToDictionary(%0)";
 	itype.cs_managed_to_variant = "VariantUtils.CreateFromDictionary(%0)";
 	builtin_types.insert(itype.cname, itype);
 

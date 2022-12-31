@@ -240,8 +240,8 @@ void TextServerExtension::_bind_methods() {
 	GDVIRTUAL_BIND(_shaped_text_get_spacing, "shaped", "spacing");
 
 	GDVIRTUAL_BIND(_shaped_text_add_string, "shaped", "text", "fonts", "size", "opentype_features", "language", "meta");
-	GDVIRTUAL_BIND(_shaped_text_add_object, "shaped", "key", "size", "inline_align", "length");
-	GDVIRTUAL_BIND(_shaped_text_resize_object, "shaped", "key", "size", "inline_align");
+	GDVIRTUAL_BIND(_shaped_text_add_object, "shaped", "key", "size", "inline_align", "length", "baseline");
+	GDVIRTUAL_BIND(_shaped_text_resize_object, "shaped", "key", "size", "inline_align", "baseline");
 
 	GDVIRTUAL_BIND(_shaped_get_span_count, "shaped");
 	GDVIRTUAL_BIND(_shaped_get_span_meta, "shaped", "index");
@@ -308,7 +308,7 @@ void TextServerExtension::_bind_methods() {
 	GDVIRTUAL_BIND(_strip_diacritics, "string");
 	GDVIRTUAL_BIND(_is_valid_identifier, "string");
 
-	GDVIRTUAL_BIND(_string_get_word_breaks, "string", "language");
+	GDVIRTUAL_BIND(_string_get_word_breaks, "string", "language", "chars_per_line");
 
 	GDVIRTUAL_BIND(_is_confusable, "string", "dict");
 	GDVIRTUAL_BIND(_spoof_check, "string");
@@ -1041,15 +1041,15 @@ bool TextServerExtension::shaped_text_add_string(const RID &p_shaped, const Stri
 	return ret;
 }
 
-bool TextServerExtension::shaped_text_add_object(const RID &p_shaped, const Variant &p_key, const Size2 &p_size, InlineAlignment p_inline_align, int64_t p_length) {
+bool TextServerExtension::shaped_text_add_object(const RID &p_shaped, const Variant &p_key, const Size2 &p_size, InlineAlignment p_inline_align, int64_t p_length, float p_baseline) {
 	bool ret = false;
-	GDVIRTUAL_CALL(_shaped_text_add_object, p_shaped, p_key, p_size, p_inline_align, p_length, ret);
+	GDVIRTUAL_CALL(_shaped_text_add_object, p_shaped, p_key, p_size, p_inline_align, p_length, p_baseline, ret);
 	return ret;
 }
 
-bool TextServerExtension::shaped_text_resize_object(const RID &p_shaped, const Variant &p_key, const Size2 &p_size, InlineAlignment p_inline_align) {
+bool TextServerExtension::shaped_text_resize_object(const RID &p_shaped, const Variant &p_key, const Size2 &p_size, InlineAlignment p_inline_align, float p_baseline) {
 	bool ret = false;
-	GDVIRTUAL_CALL(_shaped_text_resize_object, p_shaped, p_key, p_size, p_inline_align, ret);
+	GDVIRTUAL_CALL(_shaped_text_resize_object, p_shaped, p_key, p_size, p_inline_align, p_baseline, ret);
 	return ret;
 }
 
@@ -1118,13 +1118,13 @@ bool TextServerExtension::shaped_text_is_ready(const RID &p_shaped) const {
 }
 
 const Glyph *TextServerExtension::shaped_text_get_glyphs(const RID &p_shaped) const {
-	GDNativeConstPtr<const Glyph> ret;
+	GDExtensionConstPtr<const Glyph> ret;
 	GDVIRTUAL_CALL(_shaped_text_get_glyphs, p_shaped, ret);
 	return ret;
 }
 
 const Glyph *TextServerExtension::shaped_text_sort_logical(const RID &p_shaped) {
-	GDNativeConstPtr<const Glyph> ret;
+	GDExtensionConstPtr<const Glyph> ret;
 	GDVIRTUAL_CALL(_shaped_text_sort_logical, p_shaped, ret);
 	return ret;
 }
@@ -1178,7 +1178,7 @@ int64_t TextServerExtension::shaped_text_get_ellipsis_pos(const RID &p_shaped) c
 }
 
 const Glyph *TextServerExtension::shaped_text_get_ellipsis_glyphs(const RID &p_shaped) const {
-	GDNativeConstPtr<const Glyph> ret;
+	GDExtensionConstPtr<const Glyph> ret;
 	GDVIRTUAL_CALL(_shaped_text_get_ellipsis_glyphs, p_shaped, ret);
 	return ret;
 }
@@ -1379,9 +1379,9 @@ TypedArray<Vector2i> TextServerExtension::parse_structured_text(StructuredTextPa
 	return ret;
 }
 
-PackedInt32Array TextServerExtension::string_get_word_breaks(const String &p_string, const String &p_language) const {
+PackedInt32Array TextServerExtension::string_get_word_breaks(const String &p_string, const String &p_language, int p_chars_per_line) const {
 	PackedInt32Array ret;
-	GDVIRTUAL_CALL(_string_get_word_breaks, p_string, p_language, ret);
+	GDVIRTUAL_CALL(_string_get_word_breaks, p_string, p_language, p_chars_per_line, ret);
 	return ret;
 }
 

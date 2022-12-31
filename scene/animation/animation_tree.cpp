@@ -432,7 +432,6 @@ void AnimationNode::_bind_methods() {
 	GDVIRTUAL_BIND(_has_filter);
 
 	ADD_SIGNAL(MethodInfo("removed_from_graph"));
-
 	ADD_SIGNAL(MethodInfo("tree_changed"));
 
 	BIND_ENUM_CONSTANT(FILTER_IGNORE);
@@ -1383,7 +1382,7 @@ void AnimationTree::_process_graph(double p_delta) {
 							}
 						} else {
 							if (seeked) {
-								int idx = a->track_find_key(i, time, !is_external_seeking);
+								int idx = a->track_find_key(i, time, is_external_seeking ? Animation::FIND_MODE_NEAREST : Animation::FIND_MODE_EXACT);
 								if (idx < 0) {
 									continue;
 								}
@@ -1406,7 +1405,7 @@ void AnimationTree::_process_graph(double p_delta) {
 						TrackCacheMethod *t = static_cast<TrackCacheMethod *>(track);
 
 						if (seeked) {
-							int idx = a->track_find_key(i, time, !is_external_seeking);
+							int idx = a->track_find_key(i, time, is_external_seeking ? Animation::FIND_MODE_NEAREST : Animation::FIND_MODE_EXACT);
 							if (idx < 0) {
 								continue;
 							}
@@ -1440,7 +1439,7 @@ void AnimationTree::_process_graph(double p_delta) {
 
 						if (seeked) {
 							//find whatever should be playing
-							int idx = a->track_find_key(i, time, !is_external_seeking);
+							int idx = a->track_find_key(i, time, is_external_seeking ? Animation::FIND_MODE_NEAREST : Animation::FIND_MODE_EXACT);
 							if (idx < 0) {
 								continue;
 							}
@@ -1553,7 +1552,7 @@ void AnimationTree::_process_graph(double p_delta) {
 
 						if (seeked) {
 							//seek
-							int idx = a->track_find_key(i, time, !is_external_seeking);
+							int idx = a->track_find_key(i, time, is_external_seeking ? Animation::FIND_MODE_NEAREST : Animation::FIND_MODE_EXACT);
 							if (idx < 0) {
 								continue;
 							}
@@ -1584,8 +1583,8 @@ void AnimationTree::_process_graph(double p_delta) {
 							}
 
 							if (player2->is_playing() || seeked) {
-								player2->play(anim_name);
 								player2->seek(at_anim_pos);
+								player2->play(anim_name);
 								t->playing = true;
 								playing_caches.insert(t);
 							} else {
@@ -1759,7 +1758,7 @@ void AnimationTree::_setup_animation_player() {
 
 	AnimationPlayer *new_player = nullptr;
 	if (!animation_player.is_empty()) {
-		new_player = Object::cast_to<AnimationPlayer>(get_node(animation_player));
+		new_player = Object::cast_to<AnimationPlayer>(get_node_or_null(animation_player));
 		if (new_player && !new_player->is_connected("animation_list_changed", callable_mp(this, &AnimationTree::_animation_player_changed))) {
 			new_player->connect("animation_list_changed", callable_mp(this, &AnimationTree::_animation_player_changed));
 		}
@@ -2037,6 +2036,10 @@ void AnimationTree::_bind_methods() {
 	BIND_ENUM_CONSTANT(ANIMATION_PROCESS_MANUAL);
 
 	ADD_SIGNAL(MethodInfo("animation_player_changed"));
+
+	// Signals from AnimationNodes.
+	ADD_SIGNAL(MethodInfo("animation_started", PropertyInfo(Variant::STRING_NAME, "anim_name")));
+	ADD_SIGNAL(MethodInfo("animation_finished", PropertyInfo(Variant::STRING_NAME, "anim_name")));
 }
 
 AnimationTree::AnimationTree() {
