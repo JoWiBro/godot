@@ -353,8 +353,8 @@ void GodotArea3D::compute_gravity(const Vector3 &p_position, Vector3 &r_gravity)
 
 // (JWB) Ether
 void GodotArea3D::compute_ether(const Vector3 &p_position, Vector3 &r_ether_velocity, real_t &r_ether_density) const {
-	r_ether_velocity = ether_default_velocity;
-	r_ether_density = ether_default_densisty;
+	r_ether_velocity = ether_velocity;
+	r_ether_density = ether_density;
 }
 
 GodotArea3D::GodotArea3D() :

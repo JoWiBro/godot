@@ -80,8 +80,16 @@ class GodotBody3D : public GodotCollisionObject3D {
 	Callable handle_surface_velocity_result_callback;
 	real_t surface_velocity_force = -1;
 
-	// (JWB) Ether
-	Vector3 ether_velocity;
+	// (JWB) Ether Velocity
+	Callable compute_linear_ether_velocity_callback;
+	Callable compute_angular_ether_velocity_callback;
+	Vector3 ether_linear_velocity;
+	Vector3 ether_angular_velocity;
+	real_t ether_linear_drag_coefficient = 0.0;
+	real_t ether_angular_drag_coefficient = 0.0;
+
+	real_t total_ether_density = 0.0;
+	Vector3 total_ether_velocity;
 
 	// Relative to the local frame of reference
 	Basis principal_inertia_axes_local;
@@ -169,6 +177,10 @@ public:
 	_FORCE_INLINE_ void set_surface_velocity_force(real_t p_force) { surface_velocity_force = p_force; }
 	_FORCE_INLINE_ real_t get_surface_velocity_force() const { return surface_velocity_force; }
 
+	// (JWB) ether velocity
+	void set_compute_linear_ether_velocity_callback(const Callable &p_callable);
+	void set_compute_angular_ether_velocity_callback(const Callable &p_callable);
+
 	GodotPhysicsDirectBodyState3D *get_direct_state();
 
 	_FORCE_INLINE_ void add_area(GodotArea3D *p_area) {
@@ -234,6 +246,13 @@ public:
 
 	_FORCE_INLINE_ const Vector3 &get_biased_linear_velocity() const { return biased_linear_velocity; }
 	_FORCE_INLINE_ const Vector3 &get_biased_angular_velocity() const { return biased_angular_velocity; }
+
+	// (JWB) Ether Velocity
+	_FORCE_INLINE_ void set_ether_linear_velocity(const Vector3 &p_velocity) { ether_linear_velocity = p_velocity; }
+	_FORCE_INLINE_ Vector3 get_ether_linear_velocity() const { return ether_linear_velocity; }
+
+	_FORCE_INLINE_ void set_ether_angular_velocity(const Vector3 &p_velocity) { ether_angular_velocity = p_velocity; }
+	_FORCE_INLINE_ Vector3 get_ether_angular_velocity() const { return ether_angular_velocity; }
 
 	_FORCE_INLINE_ void apply_central_impulse(const Vector3 &p_impulse) {
 		linear_velocity += p_impulse * _inv_mass;
@@ -353,6 +372,10 @@ public:
 	}
 
 	// (JWB)
+	_FORCE_INLINE_ bool compute_surface_modification(const Vector3 &p_pos, const Vector3 &p_normal, Vector3 &p_lin_vel, Vector3 &p_ang_vel, real_t &p_fric) const {
+		return false;
+	}
+
 	_FORCE_INLINE_ Vector3 compute_linear_surface_velocity(const Vector3 &p_pos, const Vector3 &p_normal) const {
 		if (compute_linear_surface_velocity_callback.get_object()) {
 			Variant pos(p_pos);

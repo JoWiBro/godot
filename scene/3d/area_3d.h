@@ -69,7 +69,7 @@ private:
 	bool locked = false;
 
 	// (JWB) Ether
-	real_t ether_dendity = 0.1;
+	real_t ether_density = 0.1;
 
 	void _body_inout(int p_status, const RID &p_body, ObjectID p_instance, int p_body_shape, int p_area_shape);
 

@@ -484,6 +484,8 @@ void GodotBody3D::integrate_forces(real_t p_step) {
 	bool gravity_done = false;
 	bool linear_damp_done = false;
 	bool angular_damp_done = false;
+	bool linear_drag_done = false;
+	bool angular_drag_done = false;
 
 	bool stopped = false;
 
@@ -491,6 +493,10 @@ void GodotBody3D::integrate_forces(real_t p_step) {
 
 	total_linear_damp = 0.0;
 	total_angular_damp = 0.0;
+
+	// (JWB) ether
+	total_ether_density = 0.0;
+	total_ether_velocity = Vector3(0, 0, 0);
 
 	// Combine gravity and damping from overlapping areas in priority order.
 	if (ac) {
@@ -558,7 +564,33 @@ void GodotBody3D::integrate_forces(real_t p_step) {
 					}
 				}
 			}
-			stopped = gravity_done && linear_damp_done && angular_damp_done;
+			// (JWB) ether
+			if(!linear_drag_done) {
+				PhysicsServer3D::AreaSpaceOverrideMode area_linear_drag_mode = (PhysicsServer3D::AreaSpaceOverrideMode)(int)aa[i].area->get_param(PhysicsServer3D::AREA_PARAM_LINEAR_DAMP_OVERRIDE_MODE);
+				if (area_linear_drag_mode != PhysicsServer3D::AREA_SPACE_OVERRIDE_DISABLED)
+				{
+					real_t area_ether_density = aa[i].area->get_ether_density();
+					Vector3 area_ether_velocity = aa[i].area->get_ether_velocity();
+					switch (area_linear_drag_mode)
+					{
+						case PhysicsServer3D::AREA_SPACE_OVERRIDE_COMBINE:
+						case PhysicsServer3D::AREA_SPACE_OVERRIDE_COMBINE_REPLACE: {
+							total_ether_density += area_ether_density;
+							total_ether_velocity += area_ether_velocity;
+							linear_drag_done = area_linear_drag_mode == PhysicsServer3D::AREA_SPACE_OVERRIDE_COMBINE_REPLACE;
+						} break;
+						case PhysicsServer3D::AREA_SPACE_OVERRIDE_REPLACE:
+						case PhysicsServer3D::AREA_SPACE_OVERRIDE_REPLACE_COMBINE: {
+							total_ether_density = area_ether_density;
+							total_ether_velocity = area_ether_velocity;
+							linear_drag_done = area_linear_drag_mode == PhysicsServer3D::AREA_SPACE_OVERRIDE_REPLACE;
+						} break;
+						default: {
+						}
+					}
+				}
+			}
+			stopped = gravity_done && linear_damp_done && angular_damp_done && linear_drag_done;
 		}
 	}
 
@@ -813,7 +845,7 @@ void GodotBody3D::set_force_integration_callback(const Callable &p_callable, con
 	}
 }
 
-// (JWB)
+// (JWB) surface velocity
 void GodotBody3D::set_compute_linear_surface_velocity_callback(const Callable &p_callable) {
 	compute_linear_surface_velocity_callback = p_callable;
 }
@@ -826,6 +858,16 @@ void GodotBody3D::set_compute_angular_surface_velocity_callback(const Callable &
 // (JWB)
 void GodotBody3D::set_handle_surface_velocity_result_callback(const Callable &p_callable) {
 	handle_surface_velocity_result_callback = p_callable;
+}
+
+// (JWB) ether velocity
+void GodotBody3D::set_compute_linear_ether_velocity_callback(const Callable &p_callable) {
+	compute_linear_ether_velocity_callback = p_callable;
+}
+
+// (JWB)
+void GodotBody3D::set_compute_angular_ether_velocity_callback(const Callable &p_callable) {
+	compute_angular_ether_velocity_callback = p_callable;
 }
 
 GodotPhysicsDirectBodyState3D *GodotBody3D::get_direct_state() {

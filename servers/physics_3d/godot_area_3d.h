@@ -66,9 +66,9 @@ class GodotArea3D : public GodotCollisionObject3D {
 	SelfList<GodotArea3D> monitor_query_list;
 	SelfList<GodotArea3D> moved_list;
 
-	// // (JWB) Ether
-	real_t ether_default_densisty = 0.01;
-	Vector3 ether_default_velocity;
+	// (JWB) Ether
+	real_t ether_density = 0.01;
+	Vector3 ether_velocity;
 
 	struct BodyKey {
 		RID rid;
@@ -164,6 +164,13 @@ public:
 
 	_FORCE_INLINE_ void set_wind_direction(const Vector3 &p_wind_direction) { wind_direction = p_wind_direction; }
 	_FORCE_INLINE_ const Vector3 &get_wind_direction() const { return wind_direction; }
+
+	// (JWB) Ether
+	_FORCE_INLINE_ void set_ether_density(real_t p_density) { ether_density = p_density; }
+	_FORCE_INLINE_ real_t get_ether_density() const { return ether_density; }
+
+	_FORCE_INLINE_ void set_ether_velocity(const Vector3 &p_velocity) { ether_velocity = p_velocity; }
+	_FORCE_INLINE_ const Vector3 &get_ether_velocity() const { return ether_velocity; }
 
 	_FORCE_INLINE_ void add_constraint(GodotConstraint3D *p_constraint) { constraints.insert(p_constraint); }
 	_FORCE_INLINE_ void remove_constraint(GodotConstraint3D *p_constraint) { constraints.erase(p_constraint); }
