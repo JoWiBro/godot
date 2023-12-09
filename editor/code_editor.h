@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  code_editor.h                                                        */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  code_editor.h                                                         */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #ifndef CODE_EDITOR_H
 #define CODE_EDITOR_H
@@ -97,7 +97,7 @@ class FindReplaceBar : public HBoxContainer {
 	void _update_matches_label();
 
 	void _show_search(bool p_focus_replace = false, bool p_show_only = false);
-	void _hide_bar();
+	void _hide_bar(bool p_force_focus = false);
 
 	void _editor_text_changed();
 	void _search_options_changed(bool p_pressed);
@@ -108,6 +108,9 @@ class FindReplaceBar : public HBoxContainer {
 protected:
 	void _notification(int p_what);
 	virtual void unhandled_input(const Ref<InputEvent> &p_event) override;
+	void _focus_lost();
+
+	void _update_flags(bool p_direction_backwards);
 
 	bool _search(uint32_t p_flags, int p_from_line, int p_from_col);
 
@@ -157,6 +160,7 @@ class CodeTextEditor : public VBoxContainer {
 
 	Label *info = nullptr;
 	Timer *idle = nullptr;
+	bool code_complete_enabled = true;
 	Timer *code_complete_timer = nullptr;
 	int code_complete_timer_line = 0;
 
@@ -187,6 +191,7 @@ class CodeTextEditor : public VBoxContainer {
 	Color completion_font_color;
 	Color completion_string_color;
 	Color completion_comment_color;
+	Color completion_doc_comment_color;
 	CodeTextEditorCodeCompleteFunc code_complete_func;
 	void *code_complete_ud = nullptr;
 
@@ -198,8 +203,10 @@ class CodeTextEditor : public VBoxContainer {
 
 	void _update_status_bar_theme();
 
-	void _delete_line(int p_line, int p_caret);
 	void _toggle_scripts_pressed();
+
+	int _get_affected_lines_from(int p_caret);
+	int _get_affected_lines_to(int p_caret);
 
 protected:
 	virtual void _load_theme_settings() {}
@@ -219,9 +226,6 @@ protected:
 public:
 	void trim_trailing_whitespace();
 	void insert_final_newline();
-
-	void convert_indent_to_spaces();
-	void convert_indent_to_tabs();
 
 	enum CaseStyle {
 		UPPER,

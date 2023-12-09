@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  hostfxr_resolver.cpp                                                 */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  hostfxr_resolver.cpp                                                  */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 /*
 Adapted to Godot from the nethost library: https://github.com/dotnet/runtime/tree/main/src/native/corehost
@@ -60,6 +60,9 @@ SOFTWARE.
 
 #include "hostfxr_resolver.h"
 
+#include "../utils/path_utils.h"
+#include "semver.h"
+
 #include "core/config/engine.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
@@ -70,9 +73,6 @@ SOFTWARE.
 #include <windows.h>
 #endif
 
-#include "../utils/path_utils.h"
-#include "semver.h"
-
 // We don't use libnethost as it gives us issues with some compilers.
 // This file tries to mimic libnethost's hostfxr_resolver search logic. We try to use the
 // same function names for easier comparing in case we need to update this in the future.
@@ -80,7 +80,7 @@ SOFTWARE.
 namespace {
 
 String get_hostfxr_file_name() {
-#if defined(WINDOWS_ENABLED) || defined(UWP_ENABLED)
+#if defined(WINDOWS_ENABLED)
 	return "hostfxr.dll";
 #elif defined(MACOS_ENABLED) || defined(IOS_ENABLED)
 	return "libhostfxr.dylib";
@@ -320,7 +320,12 @@ bool get_dotnet_root_from_env(String &r_dotnet_root) {
 
 bool godotsharp::hostfxr_resolver::try_get_path_from_dotnet_root(const String &p_dotnet_root, String &r_fxr_path) {
 	String fxr_dir = path::join(p_dotnet_root, "host", "fxr");
-	ERR_FAIL_COND_V_MSG(!DirAccess::exists(fxr_dir), false, "The host fxr folder does not exist: " + fxr_dir);
+	if (!DirAccess::exists(fxr_dir)) {
+		if (OS::get_singleton()->is_stdout_verbose()) {
+			ERR_PRINT("The host fxr folder does not exist: " + fxr_dir + ".");
+		}
+		return false;
+	}
 	return get_latest_fxr(fxr_dir, r_fxr_path);
 }
 

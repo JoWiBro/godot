@@ -1,36 +1,37 @@
-/*************************************************************************/
-/*  post_import_plugin_skeleton_renamer.cpp                              */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  post_import_plugin_skeleton_renamer.cpp                               */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "post_import_plugin_skeleton_renamer.h"
 
 #include "editor/import/scene_import_settings.h"
+#include "scene/3d/bone_attachment_3d.h"
 #include "scene/3d/importer_mesh_instance_3d.h"
 #include "scene/3d/skeleton_3d.h"
 #include "scene/animation/animation_player.h"
@@ -102,7 +103,7 @@ void PostImportPluginSkeletonRenamer::_internal_process(InternalImportCategory p
 						continue;
 					}
 					String track_path = String(anim->track_get_path(i).get_concatenated_names());
-					Node *node = (ap->get_node(ap->get_root()))->get_node(NodePath(track_path));
+					Node *node = (ap->get_node(ap->get_root_node()))->get_node(NodePath(track_path));
 					if (node) {
 						Skeleton3D *track_skeleton = Object::cast_to<Skeleton3D>(node);
 						if (track_skeleton && track_skeleton == skeleton) {
@@ -119,26 +120,17 @@ void PostImportPluginSkeletonRenamer::_internal_process(InternalImportCategory p
 
 	// Rename bones in all Nodes by calling method.
 	{
-		Vector<Variant> vargs;
-		vargs.push_back(p_base_scene);
-		vargs.push_back(skeleton);
 		Dictionary rename_map_dict;
 		for (HashMap<String, String>::Iterator E = p_rename_map.begin(); E; ++E) {
 			rename_map_dict[E->key] = E->value;
 		}
-		vargs.push_back(rename_map_dict);
-		const Variant **argptrs = (const Variant **)alloca(sizeof(const Variant **) * vargs.size());
-		const Variant *args = vargs.ptr();
-		uint32_t argcount = vargs.size();
-		for (uint32_t i = 0; i < argcount; i++) {
-			argptrs[i] = &args[i];
-		}
 
-		TypedArray<Node> nodes = p_base_scene->find_children("*");
+		TypedArray<Node> nodes = p_base_scene->find_children("*", "BoneAttachment3D");
 		while (nodes.size()) {
-			Node *nd = Object::cast_to<Node>(nodes.pop_back());
-			Callable::CallError ce;
-			nd->callp("_notify_skeleton_bones_renamed", argptrs, argcount, ce);
+			BoneAttachment3D *attachment = Object::cast_to<BoneAttachment3D>(nodes.pop_back());
+			if (attachment) {
+				attachment->notify_skeleton_bones_renamed(p_base_scene, skeleton, rename_map_dict);
+			}
 		}
 	}
 }
@@ -219,8 +211,8 @@ void PostImportPluginSkeletonRenamer::internal_process(InternalImportCategory p_
 					int track_len = anim->get_track_count();
 					for (int i = 0; i < track_len; i++) {
 						String track_path = String(anim->track_get_path(i).get_concatenated_names());
-						Node *orig_node = (ap->get_node(ap->get_root()))->get_node(NodePath(track_path));
-						Node *node = (ap->get_node(ap->get_root()))->get_node(NodePath(track_path));
+						Node *orig_node = (ap->get_node(ap->get_root_node()))->get_node(NodePath(track_path));
+						Node *node = (ap->get_node(ap->get_root_node()))->get_node(NodePath(track_path));
 						while (node) {
 							Skeleton3D *track_skeleton = Object::cast_to<Skeleton3D>(node);
 							if (track_skeleton && track_skeleton == skeleton) {

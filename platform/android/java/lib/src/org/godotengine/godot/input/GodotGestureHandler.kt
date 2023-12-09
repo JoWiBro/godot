@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  GodotGestureHandler.kt                                               */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  GodotGestureHandler.kt                                                */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 package org.godotengine.godot.input
 
@@ -197,7 +197,10 @@ internal class GodotGestureHandler : SimpleOnGestureListener(), OnScaleGestureLi
 		if (event.actionMasked == MotionEvent.ACTION_UP) {
 			nextDownIsDoubleTap = false
 			GodotInputHandler.handleMotionEvent(event)
+		} else if (event.actionMasked == MotionEvent.ACTION_MOVE && panningAndScalingEnabled == false) {
+			GodotInputHandler.handleMotionEvent(event)
 		}
+
 		return true
 	}
 
@@ -224,42 +227,43 @@ internal class GodotGestureHandler : SimpleOnGestureListener(), OnScaleGestureLi
 				)
 				dragInProgress = false
 			}
-			return true
 		}
-
-		dragInProgress = true
 
 		val x = terminusEvent.x
 		val y = terminusEvent.y
-		if (terminusEvent.pointerCount >= 2 && panningAndScalingEnabled && !pointerCaptureInProgress) {
+		if (terminusEvent.pointerCount >= 2 && panningAndScalingEnabled && !pointerCaptureInProgress && !dragInProgress) {
 			GodotLib.pan(x, y, distanceX / 5f, distanceY / 5f)
-		} else {
+		} else if (!scaleInProgress){
+			dragInProgress = true
 			GodotInputHandler.handleMotionEvent(terminusEvent)
 		}
 		return true
 	}
 
-	override fun onScale(detector: ScaleGestureDetector?): Boolean {
-		if (detector == null || !panningAndScalingEnabled || pointerCaptureInProgress) {
+	override fun onScale(detector: ScaleGestureDetector): Boolean {
+		if (!panningAndScalingEnabled || pointerCaptureInProgress || dragInProgress) {
 			return false
 		}
-		GodotLib.magnify(
-			detector.focusX,
-			detector.focusY,
-			detector.scaleFactor
-		)
+
+		if (detector.scaleFactor >= 0.8f && detector.scaleFactor != 1f && detector.scaleFactor <= 1.2f) {
+			GodotLib.magnify(
+					detector.focusX,
+					detector.focusY,
+					detector.scaleFactor
+			)
+		}
 		return true
 	}
 
-	override fun onScaleBegin(detector: ScaleGestureDetector?): Boolean {
-		if (detector == null || !panningAndScalingEnabled || pointerCaptureInProgress) {
+	override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
+		if (!panningAndScalingEnabled || pointerCaptureInProgress || dragInProgress) {
 			return false
 		}
 		scaleInProgress = true
 		return true
 	}
 
-	override fun onScaleEnd(detector: ScaleGestureDetector?) {
+	override fun onScaleEnd(detector: ScaleGestureDetector) {
 		scaleInProgress = false
 	}
 }

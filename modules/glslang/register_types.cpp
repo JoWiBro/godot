@@ -1,40 +1,40 @@
-/*************************************************************************/
-/*  register_types.cpp                                                   */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  register_types.cpp                                                    */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "register_types.h"
 
+#include "core/config/engine.h"
 #include "servers/rendering/rendering_device.h"
 
-#include "glslang_resource_limits.h"
-
 #include <glslang/Include/Types.h>
+#include <glslang/Public/ResourceLimits.h>
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
 
@@ -56,7 +56,6 @@ static Vector<uint8_t> _compile_shader_glsl(RenderingDevice::ShaderStage p_stage
 
 	glslang::EShTargetClientVersion ClientVersion = glslang::EShTargetVulkan_1_2;
 	glslang::EShTargetLanguageVersion TargetVersion = glslang::EShTargetSpv_1_5;
-	glslang::TShader::ForbidIncluder includer;
 
 	if (capabilities->device_family == RenderingDevice::DeviceFamily::DEVICE_VULKAN) {
 		if (capabilities->version_major == 1 && capabilities->version_minor == 0) {
@@ -127,26 +126,13 @@ static Vector<uint8_t> _compile_shader_glsl(RenderingDevice::ShaderStage p_stage
 	}
 
 	EShMessages messages = (EShMessages)(EShMsgSpvRules | EShMsgVulkanRules);
-	const int DefaultVersion = 100;
-	std::string pre_processed_code;
-
-	//preprocess
-	if (!shader.preprocess(&DefaultTBuiltInResource, DefaultVersion, ENoProfile, false, false, messages, &pre_processed_code, includer)) {
-		if (r_error) {
-			(*r_error) = "Failed pre-process:\n";
-			(*r_error) += shader.getInfoLog();
-			(*r_error) += "\n";
-			(*r_error) += shader.getInfoDebugLog();
-		}
-
-		return ret;
+	if (Engine::get_singleton()->is_generate_spirv_debug_info_enabled()) {
+		messages = (EShMessages)(messages | EShMsgDebugInfo);
 	}
-	//set back..
-	cs_strings = pre_processed_code.c_str();
-	shader.setStrings(&cs_strings, 1);
+	const int DefaultVersion = 100;
 
 	//parse
-	if (!shader.parse(&DefaultTBuiltInResource, DefaultVersion, false, messages)) {
+	if (!shader.parse(GetDefaultResources(), DefaultVersion, false, messages)) {
 		if (r_error) {
 			(*r_error) = "Failed parse:\n";
 			(*r_error) += shader.getInfoLog();
@@ -174,6 +160,13 @@ static Vector<uint8_t> _compile_shader_glsl(RenderingDevice::ShaderStage p_stage
 	std::vector<uint32_t> SpirV;
 	spv::SpvBuildLogger logger;
 	glslang::SpvOptions spvOptions;
+
+	if (Engine::get_singleton()->is_generate_spirv_debug_info_enabled()) {
+		spvOptions.generateDebugInfo = true;
+		spvOptions.emitNonSemanticShaderDebugInfo = true;
+		spvOptions.emitNonSemanticShaderDebugSource = true;
+	}
+
 	glslang::GlslangToSpv(*program.getIntermediate(stages[p_stage]), SpirV, &logger, &spvOptions);
 
 	ret.resize(SpirV.size() * sizeof(uint32_t));
@@ -188,7 +181,7 @@ static Vector<uint8_t> _compile_shader_glsl(RenderingDevice::ShaderStage p_stage
 static String _get_cache_key_function_glsl(const RenderingDevice *p_render_device) {
 	const RD::Capabilities *capabilities = p_render_device->get_device_capabilities();
 	String version;
-	version = "SpirVGen=" + itos(glslang::GetSpirvGeneratorVersion()) + ", major=" + itos(capabilities->version_major) + ", minor=" + itos(capabilities->version_minor) + " , subgroup_size=" + itos(p_render_device->limit_get(RD::LIMIT_SUBGROUP_SIZE)) + " , subgroup_ops=" + itos(p_render_device->limit_get(RD::LIMIT_SUBGROUP_OPERATIONS)) + " , subgroup_in_shaders=" + itos(p_render_device->limit_get(RD::LIMIT_SUBGROUP_IN_SHADERS));
+	version = "SpirVGen=" + itos(glslang::GetSpirvGeneratorVersion()) + ", major=" + itos(capabilities->version_major) + ", minor=" + itos(capabilities->version_minor) + " , subgroup_size=" + itos(p_render_device->limit_get(RD::LIMIT_SUBGROUP_SIZE)) + " , subgroup_ops=" + itos(p_render_device->limit_get(RD::LIMIT_SUBGROUP_OPERATIONS)) + " , subgroup_in_shaders=" + itos(p_render_device->limit_get(RD::LIMIT_SUBGROUP_IN_SHADERS)) + " , debug=" + itos(Engine::get_singleton()->is_generate_spirv_debug_info_enabled());
 	return version;
 }
 

@@ -1,46 +1,77 @@
-/*************************************************************************/
-/*  nav_region.cpp                                                       */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  nav_region.cpp                                                        */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "nav_region.h"
 
 #include "nav_map.h"
 
 void NavRegion::set_map(NavMap *p_map) {
+	if (map == p_map) {
+		return;
+	}
+
+	if (map) {
+		map->remove_region(this);
+	}
+
 	map = p_map;
 	polygons_dirty = true;
-	if (!map) {
-		connections.clear();
+
+	connections.clear();
+
+	if (map) {
+		map->add_region(this);
+	}
+}
+
+void NavRegion::set_enabled(bool p_enabled) {
+	if (enabled == p_enabled) {
+		return;
+	}
+	enabled = p_enabled;
+
+	// TODO: This should not require a full rebuild as the region has not really changed.
+	polygons_dirty = true;
+};
+
+void NavRegion::set_use_edge_connections(bool p_enabled) {
+	if (use_edge_connections != p_enabled) {
+		use_edge_connections = p_enabled;
+		polygons_dirty = true;
 	}
 }
 
 void NavRegion::set_transform(Transform3D p_transform) {
+	if (transform == p_transform) {
+		return;
+	}
 	transform = p_transform;
 	polygons_dirty = true;
 }
@@ -58,13 +89,13 @@ int NavRegion::get_connections_count() const {
 }
 
 Vector3 NavRegion::get_connection_pathway_start(int p_connection_id) const {
-	ERR_FAIL_COND_V(!map, Vector3());
+	ERR_FAIL_NULL_V(map, Vector3());
 	ERR_FAIL_INDEX_V(p_connection_id, connections.size(), Vector3());
 	return connections[p_connection_id].pathway_start;
 }
 
 Vector3 NavRegion::get_connection_pathway_end(int p_connection_id) const {
-	ERR_FAIL_COND_V(!map, Vector3());
+	ERR_FAIL_NULL_V(map, Vector3());
 	ERR_FAIL_INDEX_V(p_connection_id, connections.size(), Vector3());
 	return connections[p_connection_id].pathway_end;
 }
@@ -92,6 +123,20 @@ void NavRegion::update_polygons() {
 		return;
 	}
 
+#ifdef DEBUG_ENABLED
+	if (!Math::is_equal_approx(double(map->get_cell_size()), double(mesh->get_cell_size()))) {
+		ERR_PRINT_ONCE(vformat("Navigation map synchronization error. Attempted to update a navigation region with a navigation mesh that uses a `cell_size` of %s while assigned to a navigation map set to a `cell_size` of %s. The cell size for navigation maps can be changed by using the NavigationServer map_set_cell_size() function. The cell size for default navigation maps can also be changed in the ProjectSettings.", double(mesh->get_cell_size()), double(map->get_cell_size())));
+	}
+
+	if (!Math::is_equal_approx(double(map->get_cell_height()), double(mesh->get_cell_height()))) {
+		ERR_PRINT_ONCE(vformat("Navigation map synchronization error. Attempted to update a navigation region with a navigation mesh that uses a `cell_height` of %s while assigned to a navigation map set to a `cell_height` of %s. The cell height for navigation maps can be changed by using the NavigationServer map_set_cell_height() function. The cell height for default navigation maps can also be changed in the ProjectSettings.", double(mesh->get_cell_height()), double(map->get_cell_height())));
+	}
+
+	if (map && Math::rad_to_deg(map->get_up().angle_to(transform.basis.get_column(1))) >= 90.0f) {
+		ERR_PRINT_ONCE("Navigation map synchronization error. Attempted to update a navigation region transform rotated 90 degrees or more away from the current navigation map UP orientation.");
+	}
+#endif // DEBUG_ENABLED
+
 	Vector<Vector3> vertices = mesh->get_vertices();
 	int len = vertices.size();
 	if (len == 0) {
@@ -114,7 +159,7 @@ void NavRegion::update_polygons() {
 		p.edges.resize(mesh_poly.size());
 
 		Vector3 center;
-		float sum(0);
+		real_t sum(0);
 
 		for (int j(0); j < mesh_poly.size(); j++) {
 			int idx = indices[j];
@@ -143,7 +188,7 @@ void NavRegion::update_polygons() {
 
 		p.clockwise = sum > 0;
 		if (mesh_poly.size() != 0) {
-			p.center = center / float(mesh_poly.size());
+			p.center = center / real_t(mesh_poly.size());
 		}
 	}
 }

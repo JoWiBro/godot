@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  script_language_extension.h                                          */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  script_language_extension.h                                           */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #ifndef SCRIPT_LANGUAGE_EXTENSION_H
 #define SCRIPT_LANGUAGE_EXTENSION_H
@@ -53,6 +53,7 @@ protected:
 public:
 	EXBIND0RC(bool, can_instantiate)
 	EXBIND0RC(Ref<Script>, get_base_script)
+	EXBIND0RC(StringName, get_global_name)
 	EXBIND1RC(bool, inherits_script, const Ref<Script> &)
 	EXBIND0RC(StringName, get_instance_base_type)
 
@@ -76,6 +77,7 @@ public:
 	EXBIND1R(Error, reload, bool)
 
 	GDVIRTUAL0RC(TypedArray<Dictionary>, _get_documentation)
+	GDVIRTUAL0RC(String, _get_class_icon_path)
 #ifdef TOOLS_ENABLED
 	virtual Vector<DocData::ClassDoc> get_documentation() const override {
 		TypedArray<Dictionary> doc;
@@ -88,9 +90,16 @@ public:
 
 		return class_doc;
 	}
+
+	virtual String get_class_icon_path() const override {
+		String ret;
+		GDVIRTUAL_CALL(_get_class_icon_path, ret);
+		return ret;
+	}
 #endif // TOOLS_ENABLED
 
 	EXBIND1RC(bool, has_method, const StringName &)
+	EXBIND1RC(bool, has_static_method, const StringName &)
 
 	GDVIRTUAL1RC(Dictionary, _get_method_info, const StringName &)
 	virtual MethodInfo get_method_info(const StringName &p_method) const override {
@@ -101,6 +110,12 @@ public:
 
 	EXBIND0RC(bool, is_tool)
 	EXBIND0RC(bool, is_valid)
+
+	virtual bool is_abstract() const override {
+		bool abst;
+		return GDVIRTUAL_CALL(_is_abstract, abst) && abst;
+	}
+	GDVIRTUAL0RC(bool, _is_abstract)
 
 	EXBIND0RC(ScriptLanguage *, get_language)
 	EXBIND1RC(bool, has_script_signal, const StringName &)
@@ -125,7 +140,8 @@ public:
 		}
 		Variant ret;
 		GDVIRTUAL_REQUIRED_CALL(_get_property_default_value, p_property, ret);
-		return ret;
+		r_value = ret;
+		return true;
 	}
 
 	EXBIND0(update_exports)
@@ -200,7 +216,6 @@ public:
 	EXBIND0(init)
 	EXBIND0RC(String, get_type)
 	EXBIND0RC(String, get_extension)
-	EXBIND1R(Error, execute_file, const String &)
 	EXBIND0(finish)
 
 	/* EDITOR FUNCTIONS */
@@ -221,6 +236,16 @@ public:
 	virtual void get_comment_delimiters(List<String> *p_words) const override {
 		Vector<String> ret;
 		GDVIRTUAL_REQUIRED_CALL(_get_comment_delimiters, ret);
+		for (int i = 0; i < ret.size(); i++) {
+			p_words->push_back(ret[i]);
+		}
+	}
+
+	GDVIRTUAL0RC(Vector<String>, _get_doc_comment_delimiters)
+
+	virtual void get_doc_comment_delimiters(List<String> *p_words) const override {
+		Vector<String> ret;
+		GDVIRTUAL_CALL(_get_doc_comment_delimiters, ret);
 		for (int i = 0; i < ret.size(); i++) {
 			p_words->push_back(ret[i]);
 		}
@@ -288,6 +313,9 @@ public:
 				ERR_CONTINUE(!err.has("message"));
 
 				ScriptError serr;
+				if (err.has("path")) {
+					serr.path = err["path"];
+				}
 				serr.line = err["line"];
 				serr.column = err["column"];
 				serr.message = err["message"];
@@ -336,7 +364,9 @@ public:
 		GDVIRTUAL_REQUIRED_CALL(_create_script, ret);
 		return Object::cast_to<Script>(ret);
 	}
+#ifndef DISABLE_DEPRECATED
 	EXBIND0RC(bool, has_named_classes)
+#endif
 	EXBIND0RC(bool, supports_builtin_mode)
 	EXBIND0RC(bool, supports_documentation)
 	EXBIND0RC(bool, can_inherit_from_file)
@@ -594,23 +624,6 @@ public:
 		return ret;
 	}
 
-	GDVIRTUAL1R(GDExtensionPtr<void>, _alloc_instance_binding_data, Object *)
-
-	virtual void *alloc_instance_binding_data(Object *p_object) override {
-		GDExtensionPtr<void> ret = nullptr;
-		GDVIRTUAL_REQUIRED_CALL(_alloc_instance_binding_data, p_object, ret);
-		return ret.operator void *();
-	}
-
-	GDVIRTUAL1(_free_instance_binding_data, GDExtensionPtr<void>)
-
-	virtual void free_instance_binding_data(void *p_data) override {
-		GDVIRTUAL_REQUIRED_CALL(_free_instance_binding_data, p_data);
-	}
-
-	EXBIND1(refcount_incremented_instance_binding, Object *)
-	EXBIND1R(bool, refcount_decremented_instance_binding, Object *)
-
 	EXBIND0(frame)
 
 	EXBIND1RC(bool, handles_global_class_type, const String &)
@@ -639,7 +652,12 @@ VARIANT_ENUM_CAST(ScriptLanguageExtension::CodeCompletionLocation)
 
 class ScriptInstanceExtension : public ScriptInstance {
 public:
-	const GDExtensionScriptInstanceInfo *native_info;
+	const GDExtensionScriptInstanceInfo2 *native_info;
+	bool free_native_info = false;
+	struct {
+		GDExtensionScriptInstanceNotification notification_func = nullptr;
+	} deprecated_native_info;
+
 	GDExtensionScriptInstanceDataPtr instance = nullptr;
 
 // There should not be warnings on explicit casts.
@@ -666,9 +684,18 @@ public:
 			const GDExtensionPropertyInfo *pinfo = native_info->get_property_list_func(instance, &pcount);
 
 #ifdef TOOLS_ENABLED
-			Ref<Script> script = get_script();
-			if (script->is_valid() && pcount > 0) {
-				p_list->push_back(script->get_class_category());
+			if (pcount > 0) {
+				if (native_info->get_class_category_func) {
+					GDExtensionPropertyInfo gdext_class_category;
+					if (native_info->get_class_category_func(instance, &gdext_class_category)) {
+						p_list->push_back(PropertyInfo(gdext_class_category));
+					}
+				} else {
+					Ref<Script> script = get_script();
+					if (script.is_valid()) {
+						p_list->push_back(script->get_class_category());
+					}
+				}
 			}
 #endif // TOOLS_ENABLED
 
@@ -690,6 +717,28 @@ public:
 			return Variant::Type(type);
 		}
 		return Variant::NIL;
+	}
+	virtual void validate_property(PropertyInfo &p_property) const override {
+		if (native_info->validate_property_func) {
+			// GDExtension uses a StringName rather than a String for property name.
+			StringName prop_name = p_property.name;
+			GDExtensionPropertyInfo gdext_prop = {
+				(GDExtensionVariantType)p_property.type,
+				&prop_name,
+				&p_property.class_name,
+				(uint32_t)p_property.hint,
+				&p_property.hint_string,
+				p_property.usage,
+			};
+			if (native_info->validate_property_func(instance, &gdext_prop)) {
+				p_property.type = (Variant::Type)gdext_prop.type;
+				p_property.name = *reinterpret_cast<StringName *>(gdext_prop.name);
+				p_property.class_name = *reinterpret_cast<StringName *>(gdext_prop.class_name);
+				p_property.hint = (PropertyHint)gdext_prop.hint;
+				p_property.hint_string = *reinterpret_cast<String *>(gdext_prop.hint_string);
+				p_property.usage = gdext_prop.usage;
+			}
+		}
 	}
 
 	virtual bool property_can_revert(const StringName &p_name) const override {
@@ -752,11 +801,16 @@ public:
 		return ret;
 	}
 
-	virtual void notification(int p_notification) override {
+	virtual void notification(int p_notification, bool p_reversed = false) override {
 		if (native_info->notification_func) {
-			native_info->notification_func(instance, p_notification);
+			native_info->notification_func(instance, p_notification, p_reversed);
+#ifndef DISABLE_DEPRECATED
+		} else if (deprecated_native_info.notification_func) {
+			deprecated_native_info.notification_func(instance, p_notification);
+#endif // DISABLE_DEPRECATED
 		}
 	}
+
 	virtual String to_string(bool *r_valid) override {
 		if (native_info->to_string_func) {
 			GDExtensionBool valid;
@@ -827,6 +881,9 @@ public:
 	virtual ~ScriptInstanceExtension() {
 		if (native_info->free_func) {
 			native_info->free_func(instance);
+		}
+		if (free_native_info) {
+			memfree(const_cast<GDExtensionScriptInstanceInfo2 *>(native_info));
 		}
 	}
 

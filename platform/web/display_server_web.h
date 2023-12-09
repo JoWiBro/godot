@@ -1,42 +1,46 @@
-/*************************************************************************/
-/*  display_server_web.h                                                 */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  display_server_web.h                                                  */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #ifndef DISPLAY_SERVER_WEB_H
 #define DISPLAY_SERVER_WEB_H
 
 #include "servers/display_server.h"
 
+#include "godot_js.h"
+
 #include <emscripten.h>
 #include <emscripten/html5.h>
 
 class DisplayServerWeb : public DisplayServer {
+	// No need to register with GDCLASS, it's platform-specific and nothing is added.
+
 private:
 	struct JSTouchEvent {
 		uint32_t identifier[32] = { 0 };
@@ -79,34 +83,50 @@ private:
 	MouseButton last_click_button_index = MouseButton::NONE;
 
 	bool swap_cancel_ok = false;
+	bool tts = false;
 
 	// utilities
-	static void dom2godot_mod(Ref<InputEventWithModifiers> ev, int p_mod);
+	static void dom2godot_mod(Ref<InputEventWithModifiers> ev, int p_mod, Key p_keycode);
 	static const char *godot2dom_cursor(DisplayServer::CursorShape p_shape);
 
 	// events
-	static void fullscreen_change_callback(int p_fullscreen);
-	static int mouse_button_callback(int p_pressed, int p_button, double p_x, double p_y, int p_modifiers);
-	static void mouse_move_callback(double p_x, double p_y, double p_rel_x, double p_rel_y, int p_modifiers);
-	static int mouse_wheel_callback(double p_delta_x, double p_delta_y);
-	static void touch_callback(int p_type, int p_count);
-	static void key_callback(int p_pressed, int p_repeat, int p_modifiers);
-	static void vk_input_text_callback(const char *p_text, int p_cursor);
-	static void gamepad_callback(int p_index, int p_connected, const char *p_id, const char *p_guid);
-	void process_joypads();
+	WASM_EXPORT static void fullscreen_change_callback(int p_fullscreen);
+	static void _fullscreen_change_callback(int p_fullscreen);
+	WASM_EXPORT static int mouse_button_callback(int p_pressed, int p_button, double p_x, double p_y, int p_modifiers);
+	static int _mouse_button_callback(int p_pressed, int p_button, double p_x, double p_y, int p_modifiers);
+	WASM_EXPORT static void mouse_move_callback(double p_x, double p_y, double p_rel_x, double p_rel_y, int p_modifiers);
+	static void _mouse_move_callback(double p_x, double p_y, double p_rel_x, double p_rel_y, int p_modifiers);
+	WASM_EXPORT static int mouse_wheel_callback(double p_delta_x, double p_delta_y);
+	static int _mouse_wheel_callback(double p_delta_x, double p_delta_y);
+	WASM_EXPORT static void touch_callback(int p_type, int p_count);
+	static void _touch_callback(int p_type, int p_count);
+	WASM_EXPORT static void key_callback(int p_pressed, int p_repeat, int p_modifiers);
+	static void _key_callback(const String &p_key_event_code, const String &p_key_event_key, int p_pressed, int p_repeat, int p_modifiers);
+	WASM_EXPORT static void vk_input_text_callback(const char *p_text, int p_cursor);
+	static void _vk_input_text_callback(const String &p_text, int p_cursor);
+	WASM_EXPORT static void gamepad_callback(int p_index, int p_connected, const char *p_id, const char *p_guid);
+	static void _gamepad_callback(int p_index, int p_connected, const String &p_id, const String &p_guid);
+	WASM_EXPORT static void js_utterance_callback(int p_event, int p_id, int p_pos);
 	static void _js_utterance_callback(int p_event, int p_id, int p_pos);
+	WASM_EXPORT static void request_quit_callback();
+	static void _request_quit_callback();
+	WASM_EXPORT static void window_blur_callback();
+	static void _window_blur_callback();
+	WASM_EXPORT static void update_voices_callback(int p_size, const char **p_voice);
+	static void _update_voices_callback(const Vector<String> &p_voices);
+	WASM_EXPORT static void update_clipboard_callback(const char *p_text);
+	static void _update_clipboard_callback(const String &p_text);
+	WASM_EXPORT static void send_window_event_callback(int p_notification);
+	static void _send_window_event_callback(int p_notification);
+	WASM_EXPORT static void drop_files_js_callback(const char **p_filev, int p_filec);
+	static void _drop_files_js_callback(const Vector<String> &p_files);
+
+	void process_joypads();
 
 	static Vector<String> get_rendering_drivers_func();
-	static DisplayServer *create_func(const String &p_rendering_driver, WindowMode p_window_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, Error &r_error);
+	static DisplayServer *create_func(const String &p_rendering_driver, WindowMode p_window_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, Error &r_error);
 
 	static void _dispatch_input_event(const Ref<InputEvent> &p_event);
-
-	static void request_quit_callback();
-	static void window_blur_callback();
-	static void update_voices_callback(int p_size, const char **p_voice);
-	static void update_clipboard_callback(const char *p_text);
-	static void send_window_event_callback(int p_notification);
-	static void drop_files_js_callback(char **p_filev, int p_filec);
 
 protected:
 	int get_current_video_driver() const;
@@ -151,6 +171,7 @@ public:
 
 	// screen
 	virtual int get_screen_count() const override;
+	virtual int get_primary_screen() const override;
 	virtual Point2i screen_get_position(int p_screen = SCREEN_OF_MAIN_WINDOW) const override;
 	virtual Size2i screen_get_size(int p_screen = SCREEN_OF_MAIN_WINDOW) const override;
 	virtual Rect2i screen_get_usable_rect(int p_screen = SCREEN_OF_MAIN_WINDOW) const override;
@@ -207,10 +228,13 @@ public:
 
 	virtual void window_request_attention(WindowID p_window = MAIN_WINDOW_ID) override;
 	virtual void window_move_to_foreground(WindowID p_window = MAIN_WINDOW_ID) override;
+	virtual bool window_is_focused(WindowID p_window = MAIN_WINDOW_ID) const override;
 
 	virtual bool window_can_draw(WindowID p_window = MAIN_WINDOW_ID) const override;
 
 	virtual bool can_any_window_draw() const override;
+
+	virtual DisplayServer::VSyncMode window_get_vsync_mode(WindowID p_vsync_mode) const override;
 
 	// events
 	virtual void process_events() override;
@@ -223,7 +247,7 @@ public:
 	virtual void swap_buffers() override;
 
 	static void register_web_driver();
-	DisplayServerWeb(const String &p_rendering_driver, WindowMode p_window_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Point2i *p_position, const Size2i &p_resolution, Error &r_error);
+	DisplayServerWeb(const String &p_rendering_driver, WindowMode p_window_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Point2i *p_position, const Size2i &p_resolution, int p_screen, Error &r_error);
 	~DisplayServerWeb();
 };
 

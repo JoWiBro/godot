@@ -1,36 +1,37 @@
-/*************************************************************************/
-/*  rendering_device_vulkan.h                                            */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  rendering_device_vulkan.h                                             */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #ifndef RENDERING_DEVICE_VULKAN_H
 #define RENDERING_DEVICE_VULKAN_H
 
+#include "core/object/worker_thread_pool.h"
 #include "core/os/thread_safe.h"
 #include "core/templates/local_vector.h"
 #include "core/templates/oa_hash_map.h"
@@ -42,7 +43,7 @@
 #define _DEBUG
 #endif
 #endif
-#include "vk_mem_alloc.h"
+#include "thirdparty/vulkan/vk_mem_alloc.h"
 
 #ifdef USE_VOLK
 #include <volk.h>
@@ -158,7 +159,7 @@ class RenderingDeviceVulkan : public RenderingDevice {
 		RID owner;
 	};
 
-	RID_Owner<Texture, true> texture_owner;
+	RID_Owner<Texture> texture_owner;
 	uint32_t texture_upload_region_size_px = 0;
 
 	Vector<uint8_t> _texture_get_data_from_image(Texture *tex, VkImage p_image, VmaAllocation p_allocation, uint32_t p_layer, bool p_2d = false);
@@ -408,7 +409,7 @@ class RenderingDeviceVulkan : public RenderingDevice {
 		uint32_t view_count;
 	};
 
-	RID_Owner<Framebuffer, true> framebuffer_owner;
+	RID_Owner<Framebuffer> framebuffer_owner;
 
 	/***********************/
 	/**** VERTEX BUFFER ****/
@@ -423,7 +424,7 @@ class RenderingDeviceVulkan : public RenderingDevice {
 	// This mapping is done here internally, and it's not
 	// exposed.
 
-	RID_Owner<Buffer, true> vertex_buffer_owner;
+	RID_Owner<Buffer> vertex_buffer_owner;
 
 	struct VertexDescriptionKey {
 		Vector<VertexAttribute> vertex_formats;
@@ -505,7 +506,7 @@ class RenderingDeviceVulkan : public RenderingDevice {
 		Vector<VkDeviceSize> offsets;
 	};
 
-	RID_Owner<VertexArray, true> vertex_array_owner;
+	RID_Owner<VertexArray> vertex_array_owner;
 
 	struct IndexBuffer : public Buffer {
 		uint32_t max_index = 0; // Used for validation.
@@ -514,7 +515,7 @@ class RenderingDeviceVulkan : public RenderingDevice {
 		bool supports_restart_indices = false;
 	};
 
-	RID_Owner<IndexBuffer, true> index_buffer_owner;
+	RID_Owner<IndexBuffer> index_buffer_owner;
 
 	struct IndexArray {
 		uint32_t max_index = 0; // Remember the maximum index here too, for validation.
@@ -525,7 +526,7 @@ class RenderingDeviceVulkan : public RenderingDevice {
 		bool supports_restart_indices = false;
 	};
 
-	RID_Owner<IndexArray, true> index_array_owner;
+	RID_Owner<IndexArray> index_array_owner;
 
 	/****************/
 	/**** SHADER ****/
@@ -620,7 +621,7 @@ class RenderingDeviceVulkan : public RenderingDevice {
 			VkDescriptorSetLayout descriptor_set_layout = VK_NULL_HANDLE;
 		};
 
-		uint32_t vertex_input_mask = 0; // Inputs used, this is mostly for validation.
+		uint64_t vertex_input_mask = 0; // Inputs used, this is mostly for validation.
 		uint32_t fragment_output_mask = 0;
 
 		struct PushConstant {
@@ -648,7 +649,7 @@ class RenderingDeviceVulkan : public RenderingDevice {
 
 	String _shader_uniform_debug(RID p_shader, int p_set = -1);
 
-	RID_Owner<Shader, true> shader_owner;
+	RID_Owner<Shader> shader_owner;
 
 	/******************/
 	/**** UNIFORMS ****/
@@ -712,8 +713,8 @@ class RenderingDeviceVulkan : public RenderingDevice {
 	DescriptorPool *_descriptor_pool_allocate(const DescriptorPoolKey &p_key);
 	void _descriptor_pool_free(const DescriptorPoolKey &p_key, DescriptorPool *p_pool);
 
-	RID_Owner<Buffer, true> uniform_buffer_owner;
-	RID_Owner<Buffer, true> storage_buffer_owner;
+	RID_Owner<Buffer> uniform_buffer_owner;
+	RID_Owner<Buffer> storage_buffer_owner;
 
 	// Texture buffer needs a view.
 	struct TextureBuffer {
@@ -721,7 +722,7 @@ class RenderingDeviceVulkan : public RenderingDevice {
 		VkBufferView view = VK_NULL_HANDLE;
 	};
 
-	RID_Owner<TextureBuffer, true> texture_buffer_owner;
+	RID_Owner<TextureBuffer> texture_buffer_owner;
 
 	// This structure contains the descriptor set. They _need_ to be allocated
 	// for a shader (and will be erased when this shader is erased), but should
@@ -751,7 +752,7 @@ class RenderingDeviceVulkan : public RenderingDevice {
 		void *invalidated_callback_userdata = nullptr;
 	};
 
-	RID_Owner<UniformSet, true> uniform_set_owner;
+	RID_Owner<UniformSet> uniform_set_owner;
 
 	/*******************/
 	/**** PIPELINES ****/
@@ -790,7 +791,34 @@ class RenderingDeviceVulkan : public RenderingDevice {
 		uint32_t push_constant_stages_mask = 0;
 	};
 
-	RID_Owner<RenderPipeline, true> render_pipeline_owner;
+	RID_Owner<RenderPipeline> render_pipeline_owner;
+
+	struct PipelineCacheHeader {
+		uint32_t magic;
+		uint32_t data_size;
+		uint64_t data_hash;
+		uint32_t vendor_id;
+		uint32_t device_id;
+		uint32_t driver_version;
+		uint8_t uuid[VK_UUID_SIZE];
+		uint8_t driver_abi;
+	};
+
+	struct PipelineCache {
+		String file_path;
+		PipelineCacheHeader header = {};
+		size_t current_size = 0;
+		LocalVector<uint8_t> buffer;
+		VkPipelineCache cache_object = VK_NULL_HANDLE;
+	};
+
+	PipelineCache pipelines_cache;
+
+	WorkerThreadPool::TaskID pipelines_cache_save_task = WorkerThreadPool::INVALID_TASK_ID;
+
+	void _load_pipeline_cache();
+	void _update_pipeline_cache(bool p_closing = false);
+	static void _save_pipeline_cache(void *p_data);
 
 	struct ComputePipeline {
 		RID shader;
@@ -802,7 +830,7 @@ class RenderingDeviceVulkan : public RenderingDevice {
 		uint32_t local_group_size[3] = { 0, 0, 0 };
 	};
 
-	RID_Owner<ComputePipeline, true> compute_pipeline_owner;
+	RID_Owner<ComputePipeline> compute_pipeline_owner;
 
 	/*******************/
 	/**** DRAW LIST ****/
@@ -903,7 +931,7 @@ class RenderingDeviceVulkan : public RenderingDevice {
 
 	void _draw_list_insert_clear_region(DrawList *p_draw_list, Framebuffer *p_framebuffer, Point2i p_viewport_offset, Point2i p_viewport_size, bool p_clear_color, const Vector<Color> &p_clear_colors, bool p_clear_depth, float p_depth, uint32_t p_stencil);
 	Error _draw_list_setup_framebuffer(Framebuffer *p_framebuffer, InitialAction p_initial_color_action, FinalAction p_final_color_action, InitialAction p_initial_depth_action, FinalAction p_final_depth_action, VkFramebuffer *r_framebuffer, VkRenderPass *r_render_pass, uint32_t *r_subpass_count);
-	Error _draw_list_render_pass_begin(Framebuffer *framebuffer, InitialAction p_initial_color_action, FinalAction p_final_color_action, InitialAction p_initial_depth_action, FinalAction p_final_depth_action, const Vector<Color> &p_clear_colors, float p_clear_depth, uint32_t p_clear_stencil, Point2i viewport_offset, Point2i viewport_size, VkFramebuffer vkframebuffer, VkRenderPass render_pass, VkCommandBuffer command_buffer, VkSubpassContents subpass_contents, const Vector<RID> &p_storage_textures);
+	Error _draw_list_render_pass_begin(Framebuffer *framebuffer, InitialAction p_initial_color_action, FinalAction p_final_color_action, InitialAction p_initial_depth_action, FinalAction p_final_depth_action, const Vector<Color> &p_clear_colors, float p_clear_depth, uint32_t p_clear_stencil, Point2i viewport_offset, Point2i viewport_size, VkFramebuffer vkframebuffer, VkRenderPass render_pass, VkCommandBuffer command_buffer, VkSubpassContents subpass_contents, const Vector<RID> &p_storage_textures, bool p_constrained_to_region);
 	_FORCE_INLINE_ DrawList *_get_draw_list_ptr(DrawListID p_id);
 	Buffer *_get_buffer_from_owner(RID p_buffer, VkPipelineStageFlags &dst_stage_mask, VkAccessFlags &dst_access, BitField<BarrierMask> p_post_barrier);
 	Error _draw_list_allocate(const Rect2i &p_viewport, uint32_t p_splits, uint32_t p_subpass);
@@ -954,6 +982,8 @@ class RenderingDeviceVulkan : public RenderingDevice {
 
 	ComputeList *compute_list = nullptr;
 
+	void _compute_list_add_barrier(BitField<BarrierMask> p_post_barrier, uint32_t p_barrier_flags, uint32_t p_access_flags);
+
 	/**************************/
 	/**** FRAME MANAGEMENT ****/
 	/**************************/
@@ -985,8 +1015,13 @@ class RenderingDeviceVulkan : public RenderingDevice {
 		List<ComputePipeline> compute_pipelines_to_dispose_of;
 
 		VkCommandPool command_pool = VK_NULL_HANDLE;
-		VkCommandBuffer setup_command_buffer = VK_NULL_HANDLE; // Used at the beginning of every frame for set-up.
-		VkCommandBuffer draw_command_buffer = VK_NULL_HANDLE; // Used at the beginning of every frame for set-up.
+		// Used for filling up newly created buffers with data provided on creation.
+		// Primarily intended to be accessed by worker threads.
+		// Ideally this cmd buffer should use an async transfer queue.
+		VkCommandBuffer setup_command_buffer = VK_NULL_HANDLE;
+		// The main cmd buffer for drawing and compute.
+		// Primarily intended to be used by the main thread to do most stuff.
+		VkCommandBuffer draw_command_buffer = VK_NULL_HANDLE;
 
 		struct Timestamp {
 			String description;
@@ -1045,16 +1080,18 @@ class RenderingDeviceVulkan : public RenderingDevice {
 public:
 	virtual RID texture_create(const TextureFormat &p_format, const TextureView &p_view, const Vector<Vector<uint8_t>> &p_data = Vector<Vector<uint8_t>>());
 	virtual RID texture_create_shared(const TextureView &p_view, RID p_with_texture);
-	virtual RID texture_create_from_extension(TextureType p_type, DataFormat p_format, TextureSamples p_samples, uint64_t p_flags, uint64_t p_image, uint64_t p_width, uint64_t p_height, uint64_t p_depth, uint64_t p_layers);
+	virtual RID texture_create_from_extension(TextureType p_type, DataFormat p_format, TextureSamples p_samples, BitField<RenderingDevice::TextureUsageBits> p_flags, uint64_t p_image, uint64_t p_width, uint64_t p_height, uint64_t p_depth, uint64_t p_layers);
 
-	virtual RID texture_create_shared_from_slice(const TextureView &p_view, RID p_with_texture, uint32_t p_layer, uint32_t p_mipmap, uint32_t p_mipmaps = 1, TextureSliceType p_slice_type = TEXTURE_SLICE_2D);
+	virtual RID texture_create_shared_from_slice(const TextureView &p_view, RID p_with_texture, uint32_t p_layer, uint32_t p_mipmap, uint32_t p_mipmaps = 1, TextureSliceType p_slice_type = TEXTURE_SLICE_2D, uint32_t p_layers = 0);
 	virtual Error texture_update(RID p_texture, uint32_t p_layer, const Vector<uint8_t> &p_data, BitField<BarrierMask> p_post_barrier = BARRIER_MASK_ALL_BARRIERS);
 	virtual Vector<uint8_t> texture_get_data(RID p_texture, uint32_t p_layer);
 
 	virtual bool texture_is_format_supported_for_usage(DataFormat p_format, BitField<RenderingDevice::TextureUsageBits> p_usage) const;
 	virtual bool texture_is_shared(RID p_texture);
 	virtual bool texture_is_valid(RID p_texture);
+	virtual TextureFormat texture_get_format(RID p_texture);
 	virtual Size2i texture_size(RID p_texture);
+	virtual uint64_t texture_get_native_handle(RID p_texture);
 
 	virtual Error texture_copy(RID p_from_texture, RID p_to_texture, const Vector3 &p_from, const Vector3 &p_to, const Vector3 &p_size, uint32_t p_src_mipmap, uint32_t p_dst_mipmap, uint32_t p_src_layer, uint32_t p_dst_layer, BitField<BarrierMask> p_post_barrier = BARRIER_MASK_ALL_BARRIERS);
 	virtual Error texture_clear(RID p_texture, const Color &p_color, uint32_t p_base_mipmap, uint32_t p_mipmaps, uint32_t p_base_layer, uint32_t p_layers, BitField<BarrierMask> p_post_barrier = BARRIER_MASK_ALL_BARRIERS);
@@ -1082,6 +1119,7 @@ public:
 	/*****************/
 
 	virtual RID sampler_create(const SamplerState &p_state);
+	virtual bool sampler_is_format_supported_for_filter(DataFormat p_format, SamplerFilter p_sampler_filter) const;
 
 	/**********************/
 	/**** VERTEX ARRAY ****/
@@ -1104,9 +1142,10 @@ public:
 	virtual String shader_get_binary_cache_key() const;
 	virtual Vector<uint8_t> shader_compile_binary_from_spirv(const Vector<ShaderStageSPIRVData> &p_spirv, const String &p_shader_name = "");
 
-	virtual RID shader_create_from_bytecode(const Vector<uint8_t> &p_shader_binary);
+	virtual RID shader_create_from_bytecode(const Vector<uint8_t> &p_shader_binary, RID p_placeholder = RID());
+	virtual RID shader_create_placeholder();
 
-	virtual uint32_t shader_get_vertex_input_attribute_mask(RID p_shader);
+	virtual uint64_t shader_get_vertex_input_attribute_mask(RID p_shader);
 
 	/*****************/
 	/**** UNIFORM ****/
@@ -1120,9 +1159,10 @@ public:
 	virtual bool uniform_set_is_valid(RID p_uniform_set);
 	virtual void uniform_set_set_invalidation_callback(RID p_uniform_set, InvalidationCallback p_callback, void *p_userdata);
 
+	virtual Error buffer_copy(RID p_src_buffer, RID p_dst_buffer, uint32_t p_src_offset, uint32_t p_dst_offset, uint32_t p_size, BitField<BarrierMask> p_post_barrier = BARRIER_MASK_ALL_BARRIERS);
 	virtual Error buffer_update(RID p_buffer, uint32_t p_offset, uint32_t p_size, const void *p_data, BitField<BarrierMask> p_post_barrier = BARRIER_MASK_ALL_BARRIERS); // Works for any buffer.
 	virtual Error buffer_clear(RID p_buffer, uint32_t p_offset, uint32_t p_size, BitField<BarrierMask> p_post_barrier = BARRIER_MASK_ALL_BARRIERS);
-	virtual Vector<uint8_t> buffer_get_data(RID p_buffer);
+	virtual Vector<uint8_t> buffer_get_data(RID p_buffer, uint32_t p_offset = 0, uint32_t p_size = 0);
 
 	/*************************/
 	/**** RENDER PIPELINE ****/

@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  test_curve.h                                                         */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  test_curve.h                                                          */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #ifndef TEST_CURVE_H
 #define TEST_CURVE_H
@@ -62,6 +62,7 @@ TEST_CASE("[Curve] Custom curve with free tangents") {
 	curve->add_point(Vector2(0.25, 1));
 	curve->add_point(Vector2(0.5, 0));
 	curve->add_point(Vector2(0.75, 1));
+	curve->set_bake_resolution(11);
 
 	CHECK_MESSAGE(
 			Math::is_zero_approx(curve->get_point_left_tangent(0)),
@@ -82,41 +83,41 @@ TEST_CASE("[Curve] Custom curve with free tangents") {
 
 	CHECK_MESSAGE(
 			Math::is_zero_approx(curve->sample(-0.1)),
-			"Custom free curve should return the expected value at offset 0.1.");
+			"Custom free curve should return the expected value at offset -0.1.");
 	CHECK_MESSAGE(
 			curve->sample(0.1) == doctest::Approx((real_t)0.352),
 			"Custom free curve should return the expected value at offset 0.1.");
 	CHECK_MESSAGE(
 			curve->sample(0.4) == doctest::Approx((real_t)0.352),
-			"Custom free curve should return the expected value at offset 0.1.");
+			"Custom free curve should return the expected value at offset 0.4.");
 	CHECK_MESSAGE(
 			curve->sample(0.7) == doctest::Approx((real_t)0.896),
-			"Custom free curve should return the expected value at offset 0.1.");
+			"Custom free curve should return the expected value at offset 0.7.");
 	CHECK_MESSAGE(
 			curve->sample(1) == doctest::Approx(1),
-			"Custom free curve should return the expected value at offset 0.1.");
+			"Custom free curve should return the expected value at offset 1.");
 	CHECK_MESSAGE(
 			curve->sample(2) == doctest::Approx(1),
-			"Custom free curve should return the expected value at offset 0.1.");
+			"Custom free curve should return the expected value at offset 2.");
 
 	CHECK_MESSAGE(
 			Math::is_zero_approx(curve->sample_baked(-0.1)),
-			"Custom free curve should return the expected baked value at offset 0.1.");
+			"Custom free curve should return the expected baked value at offset -0.1.");
 	CHECK_MESSAGE(
 			curve->sample_baked(0.1) == doctest::Approx((real_t)0.352),
 			"Custom free curve should return the expected baked value at offset 0.1.");
 	CHECK_MESSAGE(
 			curve->sample_baked(0.4) == doctest::Approx((real_t)0.352),
-			"Custom free curve should return the expected baked value at offset 0.1.");
+			"Custom free curve should return the expected baked value at offset 0.4.");
 	CHECK_MESSAGE(
 			curve->sample_baked(0.7) == doctest::Approx((real_t)0.896),
-			"Custom free curve should return the expected baked value at offset 0.1.");
+			"Custom free curve should return the expected baked value at offset 0.7.");
 	CHECK_MESSAGE(
 			curve->sample_baked(1) == doctest::Approx(1),
-			"Custom free curve should return the expected baked value at offset 0.1.");
+			"Custom free curve should return the expected baked value at offset 1.");
 	CHECK_MESSAGE(
 			curve->sample_baked(2) == doctest::Approx(1),
-			"Custom free curve should return the expected baked value at offset 0.1.");
+			"Custom free curve should return the expected baked value at offset 2.");
 
 	curve->remove_point(1);
 	CHECK_MESSAGE(
@@ -216,6 +217,16 @@ TEST_CASE("[Curve] Custom curve with linear tangents") {
 	CHECK_MESSAGE(
 			curve->sample_baked(0.7) == doctest::Approx((real_t)0.8),
 			"Custom free curve should return the expected baked value at offset 0.7 after removing point at invalid index 10.");
+}
+
+TEST_CASE("[Curve] Straight line offset test") {
+	Ref<Curve> curve = memnew(Curve);
+	curve->add_point(Vector2(0, 0));
+	curve->add_point(Vector2(1, 1));
+
+	CHECK_MESSAGE(
+			curve->sample_baked(1.0 - (0.5 / curve->get_bake_resolution())) != curve->sample_baked(1),
+			"Straight line curve should return different baked values at offset 1 vs offset (1 - 0.5 / bake resolution) .");
 }
 
 TEST_CASE("[Curve2D] Linear sampling should return exact value") {

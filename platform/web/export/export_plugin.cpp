@@ -1,37 +1,50 @@
-/*************************************************************************/
-/*  export_plugin.cpp                                                    */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  export_plugin.cpp                                                     */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "export_plugin.h"
 
+#include "logo_svg.gen.h"
+#include "run_icon_svg.gen.h"
+
 #include "core/config/project_settings.h"
+#include "editor/editor_scale.h"
 #include "editor/editor_settings.h"
+#include "editor/editor_string_names.h"
+#include "editor/export/editor_export.h"
+#include "editor/import/resource_importer_texture_settings.h"
+#include "scene/resources/image_texture.h"
+
+#include "modules/modules_enabled.gen.h" // For mono and svg.
+#ifdef MODULE_SVG_ENABLED
+#include "modules/svg/image_loader_svg.h"
+#endif
 
 Error EditorExportPlatformWeb::_extract_template(const String &p_template, const String &p_dir, const String &p_name, bool pwa) {
 	Ref<FileAccess> io_fa;
@@ -153,7 +166,7 @@ void EditorExportPlatformWeb::_fix_html(Vector<uint8_t> &p_html, const Ref<Edito
 	const String custom_head_include = p_preset->get("html/head_include");
 	HashMap<String, String> replaces;
 	replaces["$GODOT_URL"] = p_name + ".js";
-	replaces["$GODOT_PROJECT_NAME"] = ProjectSettings::get_singleton()->get_setting("application/config/name");
+	replaces["$GODOT_PROJECT_NAME"] = GLOBAL_GET("application/config/name");
 	replaces["$GODOT_HEAD_INCLUDE"] = head_include + custom_head_include;
 	replaces["$GODOT_CONFIG"] = str_config;
 	_replace_strings(replaces, p_html);
@@ -193,7 +206,7 @@ Error EditorExportPlatformWeb::_add_manifest_icon(const String &p_path, const St
 }
 
 Error EditorExportPlatformWeb::_build_pwa(const Ref<EditorExportPreset> &p_preset, const String p_path, const Vector<SharedObject> &p_shared_objects) {
-	String proj_name = ProjectSettings::get_singleton()->get_setting("application/config/name");
+	String proj_name = GLOBAL_GET("application/config/name");
 	if (proj_name.is_empty()) {
 		proj_name = "Godot Game";
 	}
@@ -246,6 +259,7 @@ Error EditorExportPlatformWeb::_build_pwa(const Ref<EditorExportPreset> &p_prese
 	_replace_strings(replaces, sw);
 	Error err = _write_or_error(sw.ptr(), sw.size(), dir.path_join(name + ".service.worker.js"));
 	if (err != OK) {
+		// Message is supplied by the subroutine method.
 		return err;
 	}
 
@@ -278,16 +292,19 @@ Error EditorExportPlatformWeb::_build_pwa(const Ref<EditorExportPreset> &p_prese
 	const String icon144_path = p_preset->get("progressive_web_app/icon_144x144");
 	err = _add_manifest_icon(p_path, icon144_path, 144, icons_arr);
 	if (err != OK) {
+		// Message is supplied by the subroutine method.
 		return err;
 	}
 	const String icon180_path = p_preset->get("progressive_web_app/icon_180x180");
 	err = _add_manifest_icon(p_path, icon180_path, 180, icons_arr);
 	if (err != OK) {
+		// Message is supplied by the subroutine method.
 		return err;
 	}
 	const String icon512_path = p_preset->get("progressive_web_app/icon_512x512");
 	err = _add_manifest_icon(p_path, icon512_path, 512, icons_arr);
 	if (err != OK) {
+		// Message is supplied by the subroutine method.
 		return err;
 	}
 	manifest["icons"] = icons_arr;
@@ -295,6 +312,7 @@ Error EditorExportPlatformWeb::_build_pwa(const Ref<EditorExportPreset> &p_prese
 	CharString cs = Variant(manifest).to_json_string().utf8();
 	err = _write_or_error((const uint8_t *)cs.get_data(), cs.length(), dir.path_join(name + ".manifest.json"));
 	if (err != OK) {
+		// Message is supplied by the subroutine method.
 		return err;
 	}
 
@@ -312,7 +330,7 @@ void EditorExportPlatformWeb::get_preset_features(const Ref<EditorExportPreset> 
 	r_features->push_back("wasm32");
 }
 
-void EditorExportPlatformWeb::get_export_options(List<ExportOption> *r_options) {
+void EditorExportPlatformWeb::get_export_options(List<ExportOption> *r_options) const {
 	r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, "custom_template/debug", PROPERTY_HINT_GLOBAL_FILE, "*.zip"), ""));
 	r_options->push_back(ExportOption(PropertyInfo(Variant::STRING, "custom_template/release", PROPERTY_HINT_GLOBAL_FILE, "*.zip"), ""));
 
@@ -348,7 +366,14 @@ Ref<Texture2D> EditorExportPlatformWeb::get_logo() const {
 	return logo;
 }
 
-bool EditorExportPlatformWeb::has_valid_export_configuration(const Ref<EditorExportPreset> &p_preset, String &r_error, bool &r_missing_templates) const {
+bool EditorExportPlatformWeb::has_valid_export_configuration(const Ref<EditorExportPreset> &p_preset, String &r_error, bool &r_missing_templates, bool p_debug) const {
+#ifdef MODULE_MONO_ENABLED
+	// Don't check for additional errors, as this particular error cannot be resolved.
+	r_error += TTR("Exporting to Web is currently not supported in Godot 4 when using C#/.NET. Use Godot 3 to target Web with C#/Mono instead.") + "\n";
+	r_error += TTR("If this project does not use C#, use a non-C# editor build to export the project.") + "\n";
+	return false;
+#else
+
 	String err;
 	bool valid = false;
 	bool extensions = (bool)p_preset->get("variant/extensions_support");
@@ -378,6 +403,7 @@ bool EditorExportPlatformWeb::has_valid_export_configuration(const Ref<EditorExp
 	}
 
 	return valid;
+#endif // !MODULE_MONO_ENABLED
 }
 
 bool EditorExportPlatformWeb::has_valid_project_configuration(const Ref<EditorExportPreset> &p_preset, String &r_error) const {
@@ -387,10 +413,8 @@ bool EditorExportPlatformWeb::has_valid_project_configuration(const Ref<EditorEx
 	// Validate the project configuration.
 
 	if (p_preset->get("vram_texture_compression/for_mobile")) {
-		String etc_error = test_etc2();
-		if (!etc_error.is_empty()) {
+		if (!ResourceImporterTextureSettings::should_import_etc2_astc()) {
 			valid = false;
-			err += etc_error;
 		}
 	}
 
@@ -420,16 +444,17 @@ Error EditorExportPlatformWeb::export_project(const Ref<EditorExportPreset> &p_p
 	const String base_path = p_path.get_basename();
 	const String base_name = p_path.get_file().get_basename();
 
+	if (!DirAccess::exists(base_dir)) {
+		add_message(EXPORT_MESSAGE_ERROR, TTR("Export"), vformat(TTR("Target folder does not exist or is inaccessible: \"%s\""), base_dir));
+		return ERR_FILE_BAD_PATH;
+	}
+
 	// Find the correct template
 	String template_path = p_debug ? custom_debug : custom_release;
 	template_path = template_path.strip_edges();
 	if (template_path.is_empty()) {
 		bool extensions = (bool)p_preset->get("variant/extensions_support");
 		template_path = find_export_template(_get_template_name(extensions, p_debug));
-	}
-
-	if (!DirAccess::exists(base_dir)) {
-		return ERR_FILE_BAD_PATH;
 	}
 
 	if (!template_path.is_empty() && !FileAccess::exists(template_path)) {
@@ -461,6 +486,7 @@ Error EditorExportPlatformWeb::export_project(const Ref<EditorExportPreset> &p_p
 	// Extract templates.
 	error = _extract_template(template_path, base_dir, base_name, pwa);
 	if (error) {
+		// Message is supplied by the subroutine method.
 		return error;
 	}
 
@@ -491,6 +517,7 @@ Error EditorExportPlatformWeb::export_project(const Ref<EditorExportPreset> &p_p
 	_fix_html(html, p_preset, base_name, p_debug, p_flags, shared_objects, file_sizes);
 	Error err = _write_or_error(html.ptr(), html.size(), p_path);
 	if (err != OK) {
+		// Message is supplied by the subroutine method.
 		return err;
 	}
 	html.resize(0);
@@ -524,6 +551,7 @@ Error EditorExportPlatformWeb::export_project(const Ref<EditorExportPreset> &p_p
 	if (pwa) {
 		err = _build_pwa(p_preset, p_path, shared_objects);
 		if (err != OK) {
+			// Message is supplied by the subroutine method.
 			return err;
 		}
 	}
@@ -648,22 +676,36 @@ void EditorExportPlatformWeb::_server_thread_poll(void *data) {
 }
 
 EditorExportPlatformWeb::EditorExportPlatformWeb() {
-	server.instantiate();
-	server_thread.start(_server_thread_poll, this);
+	if (EditorNode::get_singleton()) {
+		server.instantiate();
+		server_thread.start(_server_thread_poll, this);
 
-	logo = ImageTexture::create_from_image(memnew(Image(_web_logo)));
-	run_icon = ImageTexture::create_from_image(memnew(Image(_web_run_icon)));
+#ifdef MODULE_SVG_ENABLED
+		Ref<Image> img = memnew(Image);
+		const bool upsample = !Math::is_equal_approx(Math::round(EDSCALE), EDSCALE);
 
-	Ref<Theme> theme = EditorNode::get_singleton()->get_editor_theme();
-	if (theme.is_valid()) {
-		stop_icon = theme->get_icon(SNAME("Stop"), SNAME("EditorIcons"));
-	} else {
-		stop_icon.instantiate();
+		ImageLoaderSVG::create_image_from_string(img, _web_logo_svg, EDSCALE, upsample, false);
+		logo = ImageTexture::create_from_image(img);
+
+		ImageLoaderSVG::create_image_from_string(img, _web_run_icon_svg, EDSCALE, upsample, false);
+		run_icon = ImageTexture::create_from_image(img);
+#endif
+
+		Ref<Theme> theme = EditorNode::get_singleton()->get_editor_theme();
+		if (theme.is_valid()) {
+			stop_icon = theme->get_icon(SNAME("Stop"), EditorStringName(EditorIcons));
+		} else {
+			stop_icon.instantiate();
+		}
 	}
 }
 
 EditorExportPlatformWeb::~EditorExportPlatformWeb() {
-	server->stop();
+	if (server.is_valid()) {
+		server->stop();
+	}
 	server_quit = true;
-	server_thread.wait_to_finish();
+	if (server_thread.is_started()) {
+		server_thread.wait_to_finish();
+	}
 }

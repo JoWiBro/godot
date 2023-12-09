@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  color.cpp                                                            */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  color.cpp                                                             */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "color.h"
 
@@ -194,7 +194,7 @@ void Color::set_hsv(float p_h, float p_s, float p_v, float p_alpha) {
 	a = p_alpha;
 
 	if (p_s == 0.0f) {
-		// Achromatic (grey)
+		// Achromatic (gray)
 		r = g = b = p_v;
 		return;
 	}
@@ -247,8 +247,7 @@ void Color::set_ok_hsl(float p_h, float p_s, float p_l, float p_alpha) {
 	hsl.h = p_h;
 	hsl.s = p_s;
 	hsl.l = p_l;
-	ok_color new_ok_color;
-	ok_color::RGB rgb = new_ok_color.okhsl_to_srgb(hsl);
+	ok_color::RGB rgb = ok_color::okhsl_to_srgb(hsl);
 	Color c = Color(rgb.r, rgb.g, rgb.b, p_alpha).clamp();
 	r = c.r;
 	g = c.g;
@@ -401,7 +400,6 @@ Color Color::named(const String &p_name) {
 	int idx = find_named_color(p_name);
 	if (idx == -1) {
 		ERR_FAIL_V_MSG(Color(), "Invalid color name: " + p_name + ".");
-		return Color();
 	}
 	return named_colors[idx].color;
 }
@@ -596,8 +594,7 @@ float Color::get_ok_hsl_h() const {
 	rgb.r = r;
 	rgb.g = g;
 	rgb.b = b;
-	ok_color new_ok_color;
-	ok_color::HSL ok_hsl = new_ok_color.srgb_to_okhsl(rgb);
+	ok_color::HSL ok_hsl = ok_color::srgb_to_okhsl(rgb);
 	if (Math::is_nan(ok_hsl.h)) {
 		return 0.0f;
 	}
@@ -609,8 +606,7 @@ float Color::get_ok_hsl_s() const {
 	rgb.r = r;
 	rgb.g = g;
 	rgb.b = b;
-	ok_color new_ok_color;
-	ok_color::HSL ok_hsl = new_ok_color.srgb_to_okhsl(rgb);
+	ok_color::HSL ok_hsl = ok_color::srgb_to_okhsl(rgb);
 	if (Math::is_nan(ok_hsl.s)) {
 		return 0.0f;
 	}
@@ -622,8 +618,7 @@ float Color::get_ok_hsl_l() const {
 	rgb.r = r;
 	rgb.g = g;
 	rgb.b = b;
-	ok_color new_ok_color;
-	ok_color::HSL ok_hsl = new_ok_color.srgb_to_okhsl(rgb);
+	ok_color::HSL ok_hsl = ok_color::srgb_to_okhsl(rgb);
 	if (Math::is_nan(ok_hsl.l)) {
 		return 0.0f;
 	}

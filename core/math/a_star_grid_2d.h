@@ -1,39 +1,38 @@
-/*************************************************************************/
-/*  a_star_grid_2d.h                                                     */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  a_star_grid_2d.h                                                      */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #ifndef A_STAR_GRID_2D_H
 #define A_STAR_GRID_2D_H
 
 #include "core/object/gdvirtual.gen.inc"
 #include "core/object/ref_counted.h"
-#include "core/object/script_language.h"
 #include "core/templates/list.h"
 #include "core/templates/local_vector.h"
 
@@ -58,7 +57,7 @@ public:
 	};
 
 private:
-	Size2i size;
+	Rect2i region;
 	Vector2 offset;
 	Size2 cell_size = Size2(1, 1);
 	bool dirty = false;
@@ -106,25 +105,33 @@ private:
 	uint64_t pass = 1;
 
 private: // Internal routines.
-	_FORCE_INLINE_ bool _is_walkable(int64_t p_x, int64_t p_y) const {
-		if (p_x >= 0 && p_y >= 0 && p_x < size.width && p_y < size.height) {
-			return !points[p_y][p_x].solid;
+	_FORCE_INLINE_ bool _is_walkable(int32_t p_x, int32_t p_y) const {
+		if (region.has_point(Vector2i(p_x, p_y))) {
+			return !points[p_y - region.position.y][p_x - region.position.x].solid;
 		}
 		return false;
 	}
 
-	_FORCE_INLINE_ Point *_get_point(int64_t p_x, int64_t p_y) {
-		if (p_x >= 0 && p_y >= 0 && p_x < size.width && p_y < size.height) {
-			return &points[p_y][p_x];
+	_FORCE_INLINE_ Point *_get_point(int32_t p_x, int32_t p_y) {
+		if (region.has_point(Vector2i(p_x, p_y))) {
+			return &points[p_y - region.position.y][p_x - region.position.x];
 		}
 		return nullptr;
 	}
 
-	_FORCE_INLINE_ Point *_get_point_unchecked(int64_t p_x, int64_t p_y) {
-		return &points[p_y][p_x];
+	_FORCE_INLINE_ Point *_get_point_unchecked(int32_t p_x, int32_t p_y) {
+		return &points[p_y - region.position.y][p_x - region.position.x];
 	}
 
-	void _get_nbors(Point *p_point, List<Point *> &r_nbors);
+	_FORCE_INLINE_ Point *_get_point_unchecked(const Vector2i &p_id) {
+		return &points[p_id.y - region.position.y][p_id.x - region.position.x];
+	}
+
+	_FORCE_INLINE_ const Point *_get_point_unchecked(const Vector2i &p_id) const {
+		return &points[p_id.y - region.position.y][p_id.x - region.position.x];
+	}
+
+	void _get_nbors(Point *p_point, LocalVector<Point *> &r_nbors);
 	Point *_jump(Point *p_from, Point *p_to);
 	bool _solve(Point *p_begin_point, Point *p_end_point);
 
@@ -138,6 +145,9 @@ protected:
 	GDVIRTUAL2RC(real_t, _compute_cost, Vector2i, Vector2i)
 
 public:
+	void set_region(const Rect2i &p_region);
+	Rect2i get_region() const;
+
 	void set_size(const Size2i &p_size);
 	Size2i get_size() const;
 
@@ -149,10 +159,7 @@ public:
 
 	void update();
 
-	int get_width() const;
-	int get_height() const;
-
-	bool is_in_bounds(int p_x, int p_y) const;
+	bool is_in_bounds(int32_t p_x, int32_t p_y) const;
 	bool is_in_boundsv(const Vector2i &p_id) const;
 	bool is_dirty() const;
 
@@ -173,6 +180,9 @@ public:
 
 	void set_point_weight_scale(const Vector2i &p_id, real_t p_weight_scale);
 	real_t get_point_weight_scale(const Vector2i &p_id) const;
+
+	void fill_solid_region(const Rect2i &p_region, bool p_solid = true);
+	void fill_weight_scale_region(const Rect2i &p_region, real_t p_weight_scale);
 
 	void clear();
 

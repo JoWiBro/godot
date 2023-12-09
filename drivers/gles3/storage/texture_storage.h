@@ -1,37 +1,39 @@
-/*************************************************************************/
-/*  texture_storage.h                                                    */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  texture_storage.h                                                     */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #ifndef TEXTURE_STORAGE_GLES3_H
 #define TEXTURE_STORAGE_GLES3_H
 
 #ifdef GLES3_ENABLED
+
+#include "platform_gl.h"
 
 #include "config.h"
 #include "core/os/os.h"
@@ -39,15 +41,7 @@
 #include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering/storage/texture_storage.h"
 
-#include "../shaders/canvas_sdf.glsl.gen.h"
-
-// This must come first to avoid windows.h mess
-#include "platform_config.h"
-#ifndef OPENGL_INCLUDE_H
-#include <GLES3/gl3.h>
-#else
-#include OPENGL_INCLUDE_H
-#endif
+#include "drivers/gles3/shaders/canvas_sdf.glsl.gen.h"
 
 namespace GLES3 {
 
@@ -84,13 +78,39 @@ namespace GLES3 {
 #define _EXT_COMPRESSED_RGBA8_ETC2_EAC 0x9278
 #define _EXT_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC 0x9279
 
+#define _EXT_COMPRESSED_RGBA_ASTC_4x4_KHR 0x93B0
+#define _EXT_COMPRESSED_RGBA_ASTC_5x4_KHR 0x93B1
+#define _EXT_COMPRESSED_RGBA_ASTC_5x5_KHR 0x93B2
+#define _EXT_COMPRESSED_RGBA_ASTC_6x5_KHR 0x93B3
+#define _EXT_COMPRESSED_RGBA_ASTC_6x6_KHR 0x93B4
+#define _EXT_COMPRESSED_RGBA_ASTC_8x5_KHR 0x93B5
+#define _EXT_COMPRESSED_RGBA_ASTC_8x6_KHR 0x93B6
+#define _EXT_COMPRESSED_RGBA_ASTC_8x8_KHR 0x93B7
+#define _EXT_COMPRESSED_RGBA_ASTC_10x5_KHR 0x93B8
+#define _EXT_COMPRESSED_RGBA_ASTC_10x6_KHR 0x93B9
+#define _EXT_COMPRESSED_RGBA_ASTC_10x8_KHR 0x93BA
+#define _EXT_COMPRESSED_RGBA_ASTC_10x10_KHR 0x93BB
+#define _EXT_COMPRESSED_RGBA_ASTC_12x10_KHR 0x93BC
+#define _EXT_COMPRESSED_RGBA_ASTC_12x12_KHR 0x93BD
+
+#define _EXT_COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR 0x93D0
+#define _EXT_COMPRESSED_SRGB8_ALPHA8_ASTC_5x4_KHR 0x93D1
+#define _EXT_COMPRESSED_SRGB8_ALPHA8_ASTC_5x5_KHR 0x93D2
+#define _EXT_COMPRESSED_SRGB8_ALPHA8_ASTC_6x5_KHR 0x93D3
+#define _EXT_COMPRESSED_SRGB8_ALPHA8_ASTC_6x6_KHR 0x93D4
+#define _EXT_COMPRESSED_SRGB8_ALPHA8_ASTC_8x5_KHR 0x93D5
+#define _EXT_COMPRESSED_SRGB8_ALPHA8_ASTC_8x6_KHR 0x93D6
+#define _EXT_COMPRESSED_SRGB8_ALPHA8_ASTC_8x8_KHR 0x93D7
+#define _EXT_COMPRESSED_SRGB8_ALPHA8_ASTC_10x5_KHR 0x93D8
+#define _EXT_COMPRESSED_SRGB8_ALPHA8_ASTC_10x6_KHR 0x93D9
+#define _EXT_COMPRESSED_SRGB8_ALPHA8_ASTC_10x8_KHR 0x93DA
+#define _EXT_COMPRESSED_SRGB8_ALPHA8_ASTC_10x10_KHR 0x93DB
+#define _EXT_COMPRESSED_SRGB8_ALPHA8_ASTC_12x10_KHR 0x93DC
+#define _EXT_COMPRESSED_SRGB8_ALPHA8_ASTC_12x12_KHR 0x93DD
+
 #define _GL_TEXTURE_EXTERNAL_OES 0x8D65
 
 #define _EXT_TEXTURE_CUBE_MAP_SEAMLESS 0x884F
-
-#ifndef GLES_OVER_GL
-#define glClearDepth glClearDepthf
-#endif //!GLES_OVER_GL
 
 enum DefaultGLTexture {
 	DEFAULT_GL_TEXTURE_WHITE,
@@ -222,10 +242,10 @@ struct Texture {
 		}
 		Config *config = Config::get_singleton();
 		state_filter = p_filter;
-		GLenum pmin = GL_NEAREST; // param min
-		GLenum pmag = GL_NEAREST; // param mag
-		GLint max_lod = 1000;
-		bool use_anisotropy = false;
+		GLenum pmin = GL_NEAREST;
+		GLenum pmag = GL_NEAREST;
+		GLint max_lod = 0;
+		GLfloat anisotropy = 1.0f;
 		switch (state_filter) {
 			case RS::CANVAS_ITEM_TEXTURE_FILTER_NEAREST: {
 				pmin = GL_NEAREST;
@@ -238,7 +258,7 @@ struct Texture {
 				max_lod = 0;
 			} break;
 			case RS::CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC: {
-				use_anisotropy = true;
+				anisotropy = config->anisotropic_level;
 			};
 				[[fallthrough]];
 			case RS::CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS: {
@@ -248,12 +268,14 @@ struct Texture {
 					max_lod = 0;
 				} else if (config->use_nearest_mip_filter) {
 					pmin = GL_NEAREST_MIPMAP_NEAREST;
+					max_lod = 1000;
 				} else {
 					pmin = GL_NEAREST_MIPMAP_LINEAR;
+					max_lod = 1000;
 				}
 			} break;
 			case RS::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC: {
-				use_anisotropy = true;
+				anisotropy = config->anisotropic_level;
 			};
 				[[fallthrough]];
 			case RS::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS: {
@@ -263,19 +285,22 @@ struct Texture {
 					max_lod = 0;
 				} else if (config->use_nearest_mip_filter) {
 					pmin = GL_LINEAR_MIPMAP_NEAREST;
+					max_lod = 1000;
 				} else {
 					pmin = GL_LINEAR_MIPMAP_LINEAR;
+					max_lod = 1000;
 				}
 			} break;
 			default: {
+				return;
 			} break;
 		}
 		glTexParameteri(target, GL_TEXTURE_MIN_FILTER, pmin);
 		glTexParameteri(target, GL_TEXTURE_MAG_FILTER, pmag);
 		glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
 		glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, max_lod);
-		if (config->support_anisotropic_filter && use_anisotropy) {
-			glTexParameterf(target, _GL_TEXTURE_MAX_ANISOTROPY_EXT, config->anisotropic_level);
+		if (config->support_anisotropic_filter) {
+			glTexParameterf(target, _GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropy);
 		}
 	}
 	void gl_set_repeat(RS::CanvasItemTextureRepeat p_repeat) {
@@ -283,8 +308,11 @@ struct Texture {
 			return;
 		}
 		state_repeat = p_repeat;
-		GLenum prep = GL_CLAMP_TO_EDGE; // parameter repeat
+		GLenum prep = GL_CLAMP_TO_EDGE;
 		switch (state_repeat) {
+			case RS::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED: {
+				prep = GL_CLAMP_TO_EDGE;
+			} break;
 			case RS::CANVAS_ITEM_TEXTURE_REPEAT_ENABLED: {
 				prep = GL_REPEAT;
 			} break;
@@ -292,6 +320,7 @@ struct Texture {
 				prep = GL_MIRRORED_REPEAT;
 			} break;
 			default: {
+				return;
 			} break;
 		}
 		glTexParameteri(target, GL_TEXTURE_WRAP_T, prep);
@@ -300,8 +329,8 @@ struct Texture {
 	}
 
 private:
-	RS::CanvasItemTextureFilter state_filter = RS::CANVAS_ITEM_TEXTURE_FILTER_LINEAR;
-	RS::CanvasItemTextureRepeat state_repeat = RS::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED;
+	RS::CanvasItemTextureFilter state_filter = RS::CANVAS_ITEM_TEXTURE_FILTER_MAX;
+	RS::CanvasItemTextureRepeat state_repeat = RS::CANVAS_ITEM_TEXTURE_REPEAT_MAX;
 };
 
 struct RenderTarget {
@@ -315,6 +344,7 @@ struct RenderTarget {
 	GLuint depth = 0;
 	GLuint backbuffer_fbo = 0;
 	GLuint backbuffer = 0;
+	GLuint backbuffer_depth = 0;
 
 	GLuint color_internal_format = GL_RGBA8;
 	GLuint color_format = GL_RGBA;
@@ -420,6 +450,8 @@ private:
 	void _render_target_clear_sdf(RenderTarget *rt);
 	Rect2i _render_target_get_sdf_rect(const RenderTarget *rt) const;
 
+	void _texture_set_data(RID p_texture, const Ref<Image> &p_image, int p_layer, bool initialize);
+
 	struct RenderTargetSDF {
 		CanvasSdfShaderGLES3 shader;
 		RID shader_version;
@@ -452,7 +484,7 @@ public:
 
 	/* Texture API */
 
-	Texture *get_texture(RID p_rid) {
+	Texture *get_texture(RID p_rid) const {
 		Texture *texture = texture_owner.get_or_null(p_rid);
 		if (texture && texture->is_proxy) {
 			return texture_owner.get_or_null(texture->proxy_to);
@@ -462,8 +494,6 @@ public:
 	bool owns_texture(RID p_rid) { return texture_owner.owns(p_rid); };
 
 	virtual bool can_create_resources_async() const override;
-
-	RID texture_create();
 
 	virtual RID texture_allocate() override;
 	virtual void texture_free(RID p_rid) override;
@@ -505,19 +535,17 @@ public:
 
 	virtual Size2 texture_size_with_proxy(RID p_proxy) override;
 
-	virtual RID texture_get_rd_texture_rid(RID p_texture, bool p_srgb = false) const override;
+	virtual void texture_rd_initialize(RID p_texture, const RID &p_rd_texture, const RS::TextureLayeredType p_layer_type = RS::TEXTURE_LAYERED_2D_ARRAY) override;
+	virtual RID texture_get_rd_texture(RID p_texture, bool p_srgb = false) const override;
+	virtual uint64_t texture_get_native_handle(RID p_texture, bool p_srgb = false) const override;
 
 	void texture_set_data(RID p_texture, const Ref<Image> &p_image, int p_layer = 0);
-	void texture_set_data_partial(RID p_texture, const Ref<Image> &p_image, int src_x, int src_y, int src_w, int src_h, int dst_x, int dst_y, int p_dst_mip, int p_layer = 0);
-	//Ref<Image> texture_get_data(RID p_texture, int p_layer = 0) const;
-	void texture_set_sampler(RID p_texture, RS::CanvasItemTextureFilter p_filter, RS::CanvasItemTextureRepeat p_repeat);
-	Image::Format texture_get_format(RID p_texture) const;
+	virtual Image::Format texture_get_format(RID p_texture) const override;
 	uint32_t texture_get_texid(RID p_texture) const;
 	uint32_t texture_get_width(RID p_texture) const;
 	uint32_t texture_get_height(RID p_texture) const;
 	uint32_t texture_get_depth(RID p_texture) const;
 	void texture_bind(RID p_texture, uint32_t p_texture_no);
-	RID texture_create_radiance_cubemap(RID p_source, int p_resolution = -1) const;
 
 	/* TEXTURE ATLAS API */
 
@@ -544,7 +572,7 @@ public:
 	virtual void decal_initialize(RID p_rid) override;
 	virtual void decal_free(RID p_rid) override{};
 
-	virtual void decal_set_extents(RID p_decal, const Vector3 &p_extents) override;
+	virtual void decal_set_size(RID p_decal, const Vector3 &p_size) override;
 	virtual void decal_set_texture(RID p_decal, RS::DecalTexture p_type, RID p_texture) override;
 	virtual void decal_set_emission_energy(RID p_decal, float p_energy) override;
 	virtual void decal_set_albedo_mix(RID p_decal, float p_mix) override;
@@ -555,15 +583,17 @@ public:
 	virtual void decal_set_normal_fade(RID p_decal, float p_fade) override;
 
 	virtual AABB decal_get_aabb(RID p_decal) const override;
+	virtual uint32_t decal_get_cull_mask(RID p_decal) const override { return 0; }
 
 	virtual void texture_add_to_decal_atlas(RID p_texture, bool p_panorama_to_dp = false) override {}
 	virtual void texture_remove_from_decal_atlas(RID p_texture, bool p_panorama_to_dp = false) override {}
 
 	/* DECAL INSTANCE */
 
-	virtual RID decal_instance_create(RID p_decal) override;
-	virtual void decal_instance_free(RID p_decal_instance) override;
-	virtual void decal_instance_set_transform(RID p_decal, const Transform3D &p_transform) override;
+	virtual RID decal_instance_create(RID p_decal) override { return RID(); }
+	virtual void decal_instance_free(RID p_decal_instance) override {}
+	virtual void decal_instance_set_transform(RID p_decal, const Transform3D &p_transform) override {}
+	virtual void decal_instance_set_sorting_offset(RID p_decal_instance, float p_sorting_offset) override {}
 
 	/* RENDER TARGET API */
 
@@ -571,6 +601,8 @@ public:
 
 	RenderTarget *get_render_target(RID p_rid) { return render_target_owner.get_or_null(p_rid); };
 	bool owns_render_target(RID p_rid) { return render_target_owner.owns(p_rid); };
+
+	void check_backbuffer(RenderTarget *rt, const bool uses_screen_texture, const bool uses_depth_texture);
 
 	virtual RID render_target_create() override;
 	virtual void render_target_free(RID p_rid) override;
@@ -587,6 +619,11 @@ public:
 	void render_target_clear_used(RID p_render_target);
 	virtual void render_target_set_msaa(RID p_render_target, RS::ViewportMSAA p_msaa) override;
 	virtual RS::ViewportMSAA render_target_get_msaa(RID p_render_target) const override;
+	virtual void render_target_set_msaa_needs_resolve(RID p_render_target, bool p_needs_resolve) override {}
+	virtual bool render_target_get_msaa_needs_resolve(RID p_render_target) const override { return false; }
+	virtual void render_target_do_msaa_resolve(RID p_render_target) override {}
+	virtual void render_target_set_use_hdr(RID p_render_target, bool p_use_hdr_2d) override {}
+	virtual bool render_target_is_using_hdr(RID p_render_target) const override { return false; }
 
 	// new
 	void render_target_set_as_unused(RID p_render_target) override {
@@ -598,6 +635,10 @@ public:
 	Color render_target_get_clear_request_color(RID p_render_target) override;
 	void render_target_disable_clear_request(RID p_render_target) override;
 	void render_target_do_clear_request(RID p_render_target) override;
+
+	GLuint render_target_get_fbo(RID p_render_target) const;
+	GLuint render_target_get_color(RID p_render_target) const;
+	GLuint render_target_get_depth(RID p_render_target) const;
 
 	virtual void render_target_set_sdf_size_and_scale(RID p_render_target, RS::ViewportSDFOversize p_size, RS::ViewportSDFScale p_scale) override;
 	virtual Rect2i render_target_get_sdf_rect(RID p_render_target) const override;
@@ -635,7 +676,7 @@ public:
 };
 
 inline String TextureStorage::get_framebuffer_error(GLenum p_status) {
-#if defined(DEBUG_ENABLED) && defined(GLES_OVER_GL)
+#if defined(DEBUG_ENABLED) && defined(GL_API_ENABLED)
 	if (p_status == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT) {
 		return "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT";
 	} else if (p_status == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT) {

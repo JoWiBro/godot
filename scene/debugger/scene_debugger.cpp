@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  scene_debugger.cpp                                                   */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  scene_debugger.cpp                                                    */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "scene_debugger.h"
 
@@ -72,6 +72,11 @@ void SceneDebugger::deinitialize() {
 	}
 }
 
+#ifdef MINGW_ENABLED
+#undef near
+#undef far
+#endif
+
 #ifdef DEBUG_ENABLED
 Error SceneDebugger::parse_message(void *p_user, const String &p_msg, const Array &p_args, bool &r_captured) {
 	SceneTree *scene_tree = SceneTree::get_singleton();
@@ -90,6 +95,9 @@ Error SceneDebugger::parse_message(void *p_user, const String &p_msg, const Arra
 	} else if (p_msg == "save_node") { // Save node.
 		ERR_FAIL_COND_V(p_args.size() < 2, ERR_INVALID_DATA);
 		_save_node(p_args[0], p_args[1]);
+		Array arr;
+		arr.append(p_args[1]);
+		EngineDebugger::get_singleton()->send_message("filesystem:update_file", { arr });
 
 	} else if (p_msg == "inspect_object") { // Object Inspect
 		ERR_FAIL_COND_V(p_args.size() < 1, ERR_INVALID_DATA);
@@ -160,6 +168,7 @@ Error SceneDebugger::parse_message(void *p_user, const String &p_msg, const Arra
 		live_editor->_res_set_func(p_args[0], p_args[1], p_args[2]);
 
 	} else if (p_msg == "live_node_call") {
+		ERR_FAIL_COND_V(p_args.size() < 2, ERR_INVALID_DATA);
 		LocalVector<Variant> args;
 		LocalVector<Variant *> argptrs;
 		args.resize(p_args.size() - 2);
@@ -168,11 +177,10 @@ Error SceneDebugger::parse_message(void *p_user, const String &p_msg, const Arra
 			args[i] = p_args[i + 2];
 			argptrs[i] = &args[i];
 		}
-		live_editor->_node_call_func(p_args[0], p_args[1], (const Variant **)argptrs.ptr(), argptrs.size());
+		live_editor->_node_call_func(p_args[0], p_args[1], argptrs.size() ? (const Variant **)argptrs.ptr() : nullptr, argptrs.size());
 
 	} else if (p_msg == "live_res_call") {
-		ERR_FAIL_COND_V(p_args.size() < 10, ERR_INVALID_DATA);
-
+		ERR_FAIL_COND_V(p_args.size() < 2, ERR_INVALID_DATA);
 		LocalVector<Variant> args;
 		LocalVector<Variant *> argptrs;
 		args.resize(p_args.size() - 2);
@@ -181,7 +189,7 @@ Error SceneDebugger::parse_message(void *p_user, const String &p_msg, const Arra
 			args[i] = p_args[i + 2];
 			argptrs[i] = &args[i];
 		}
-		live_editor->_res_call_func(p_args[0], p_args[1], (const Variant **)argptrs.ptr(), argptrs.size());
+		live_editor->_res_call_func(p_args[0], p_args[1], argptrs.size() ? (const Variant **)argptrs.ptr() : nullptr, argptrs.size());
 
 	} else if (p_msg == "live_create_node") {
 		ERR_FAIL_COND_V(p_args.size() < 3, ERR_INVALID_DATA);
@@ -218,7 +226,7 @@ Error SceneDebugger::parse_message(void *p_user, const String &p_msg, const Arra
 
 void SceneDebugger::_save_node(ObjectID id, const String &p_path) {
 	Node *node = Object::cast_to<Node>(ObjectDB::get_instance(id));
-	ERR_FAIL_COND(!node);
+	ERR_FAIL_NULL(node);
 
 #ifdef TOOLS_ENABLED
 	HashMap<const Node *, Node *> duplimap;
@@ -333,6 +341,12 @@ SceneDebuggerObject::SceneDebuggerObject(ObjectID p_id) {
 	}
 
 	if (Node *node = Object::cast_to<Node>(obj)) {
+		// For debugging multiplayer.
+		{
+			PropertyInfo pi(Variant::INT, String("Node/multiplayer_authority"), PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_READ_ONLY);
+			properties.push_back(SceneDebuggerProperty(pi, node->get_multiplayer_authority()));
+		}
+
 		// Add specialized NodePath info (if inside tree).
 		if (node->is_inside_tree()) {
 			PropertyInfo pi(Variant::NODE_PATH, String("Node/path"));

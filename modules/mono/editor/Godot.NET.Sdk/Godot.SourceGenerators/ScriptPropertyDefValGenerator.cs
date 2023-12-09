@@ -17,7 +17,7 @@ namespace Godot.SourceGenerators
 
         public void Execute(GeneratorExecutionContext context)
         {
-            if (context.AreGodotSourceGeneratorsDisabled())
+            if (context.IsGodotSourceGeneratorDisabled("ScriptPropertyDefVal"))
                 return;
 
             INamedTypeSymbol[] godotClasses = context
@@ -88,16 +88,20 @@ namespace Godot.SourceGenerators
             if (isInnerClass)
             {
                 var containingType = symbol.ContainingType;
+                AppendPartialContainingTypeDeclarations(containingType);
 
-                while (containingType != null)
+                void AppendPartialContainingTypeDeclarations(INamedTypeSymbol? containingType)
                 {
+                    if (containingType == null)
+                        return;
+
+                    AppendPartialContainingTypeDeclarations(containingType.ContainingType);
+
                     source.Append("partial ");
                     source.Append(containingType.GetDeclarationKeyword());
                     source.Append(" ");
                     source.Append(containingType.NameWithTypeParameters());
                     source.Append("\n{\n");
-
-                    containingType = containingType.ContainingType;
                 }
             }
 
@@ -151,6 +155,12 @@ namespace Godot.SourceGenerators
                     continue;
                 }
 
+                if (property.ExplicitInterfaceImplementations.Length > 0)
+                {
+                    Common.ReportExportedMemberIsExplicitInterfaceImplementation(context, property);
+                    continue;
+                }
+
                 var propertyType = property.Type;
                 var marshalType = MarshalUtils.ConvertManagedTypeToMarshalType(propertyType, typeCache);
 
@@ -158,6 +168,15 @@ namespace Godot.SourceGenerators
                 {
                     Common.ReportExportedMemberTypeNotSupported(context, property);
                     continue;
+                }
+
+                if (marshalType == MarshalType.GodotObjectOrDerived)
+                {
+                    if (!symbol.InheritsFrom("GodotSharp", "Godot.Node") &&
+                        propertyType.InheritsFrom("GodotSharp", "Godot.Node"))
+                    {
+                        Common.ReportOnlyNodesShouldExportNodes(context, property);
+                    }
                 }
 
                 var propertyDeclarationSyntax = property.DeclaringSyntaxReferences
@@ -255,6 +274,15 @@ namespace Godot.SourceGenerators
                     continue;
                 }
 
+                if (marshalType == MarshalType.GodotObjectOrDerived)
+                {
+                    if (!symbol.InheritsFrom("GodotSharp", "Godot.Node") &&
+                        fieldType.InheritsFrom("GodotSharp", "Godot.Node"))
+                    {
+                        Common.ReportOnlyNodesShouldExportNodes(context, field);
+                    }
+                }
+
                 EqualsValueClauseSyntax? initializer = field.DeclaringSyntaxReferences
                     .Select(r => r.GetSyntax())
                     .OfType<VariableDeclaratorSyntax>()
@@ -279,10 +307,20 @@ namespace Godot.SourceGenerators
             {
                 source.Append("#pragma warning disable CS0109 // Disable warning about redundant 'new' keyword\n");
 
-                string dictionaryType =
+                const string dictionaryType =
                     "global::System.Collections.Generic.Dictionary<global::Godot.StringName, global::Godot.Variant>";
 
                 source.Append("#if TOOLS\n");
+
+                source.Append("    /// <summary>\n")
+                    .Append("    /// Get the default values for all properties declared in this class.\n")
+                    .Append("    /// This method is used by Godot to determine the value that will be\n")
+                    .Append("    /// used by the inspector when resetting properties.\n")
+                    .Append("    /// Do not call this method.\n")
+                    .Append("    /// </summary>\n");
+
+                source.Append("    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]\n");
+
                 source.Append("    internal new static ");
                 source.Append(dictionaryType);
                 source.Append(" GetGodotPropertyDefaultValues()\n    {\n");
@@ -314,7 +352,8 @@ namespace Godot.SourceGenerators
 
                 source.Append("        return values;\n");
                 source.Append("    }\n");
-                source.Append("#endif\n");
+
+                source.Append("#endif // TOOLS\n");
 
                 source.Append("#pragma warning restore CS0109\n");
             }

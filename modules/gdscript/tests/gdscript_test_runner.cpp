@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  gdscript_test_runner.cpp                                             */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  gdscript_test_runner.cpp                                              */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "gdscript_test_runner.h"
 
@@ -78,31 +78,30 @@ void init_autoloads() {
 			scn.instantiate();
 			scn->set_path(info.path);
 			scn->reload_from_file();
-			ERR_CONTINUE_MSG(!scn.is_valid(), vformat("Can't autoload: %s.", info.path));
+			ERR_CONTINUE_MSG(!scn.is_valid(), vformat("Failed to instantiate an autoload, can't load from path: %s.", info.path));
 
 			if (scn.is_valid()) {
 				n = scn->instantiate();
 			}
 		} else {
 			Ref<Resource> res = ResourceLoader::load(info.path);
-			ERR_CONTINUE_MSG(res.is_null(), vformat("Can't autoload: %s.", info.path));
+			ERR_CONTINUE_MSG(res.is_null(), vformat("Failed to instantiate an autoload, can't load from path: %s.", info.path));
 
 			Ref<Script> scr = res;
 			if (scr.is_valid()) {
 				StringName ibt = scr->get_instance_base_type();
 				bool valid_type = ClassDB::is_parent_class(ibt, "Node");
-				ERR_CONTINUE_MSG(!valid_type, vformat("Script does not inherit from Node: %s.", info.path));
+				ERR_CONTINUE_MSG(!valid_type, vformat("Failed to instantiate an autoload, script '%s' does not inherit from 'Node'.", info.path));
 
 				Object *obj = ClassDB::instantiate(ibt);
-
-				ERR_CONTINUE_MSG(!obj, vformat("Cannot instance script for Autoload, expected 'Node' inheritance, got: %s.", ibt));
+				ERR_CONTINUE_MSG(!obj, vformat("Failed to instantiate an autoload, cannot instantiate '%s'.", ibt));
 
 				n = Object::cast_to<Node>(obj);
 				n->set_script(scr);
 			}
 		}
 
-		ERR_CONTINUE_MSG(!n, vformat("Path in autoload not a node or script: %s.", info.path));
+		ERR_CONTINUE_MSG(!n, vformat("Failed to instantiate an autoload, path is not pointing to a scene or a script: %s.", info.path));
 		n->set_name(info.name);
 
 		for (int i = 0; i < ScriptServer::get_language_count(); i++) {
@@ -132,9 +131,10 @@ void finish_language() {
 
 StringName GDScriptTestRunner::test_function_name;
 
-GDScriptTestRunner::GDScriptTestRunner(const String &p_source_dir, bool p_init_language) {
+GDScriptTestRunner::GDScriptTestRunner(const String &p_source_dir, bool p_init_language, bool p_print_filenames) {
 	test_function_name = StaticCString::create("test");
 	do_init_languages = p_init_language;
+	print_filenames = p_print_filenames;
 
 	source_dir = p_source_dir;
 	if (!source_dir.ends_with("/")) {
@@ -145,11 +145,15 @@ GDScriptTestRunner::GDScriptTestRunner(const String &p_source_dir, bool p_init_l
 		init_language(p_source_dir);
 	}
 #ifdef DEBUG_ENABLED
-	// Enable all warnings for GDScript, so we can test them.
+	// Set all warning levels to "Warn" in order to test them properly, even the ones that default to error.
 	ProjectSettings::get_singleton()->set_setting("debug/gdscript/warnings/enable", true);
 	for (int i = 0; i < (int)GDScriptWarning::WARNING_MAX; i++) {
-		String warning = GDScriptWarning::get_name_from_code((GDScriptWarning::Code)i).to_lower();
-		ProjectSettings::get_singleton()->set_setting("debug/gdscript/warnings/" + warning, true);
+		if (i == GDScriptWarning::UNTYPED_DECLARATION || i == GDScriptWarning::INFERRED_DECLARATION) {
+			// TODO: Add ability for test scripts to specify which warnings to enable/disable for testing.
+			continue;
+		}
+		String warning_setting = GDScriptWarning::get_settings_path_from_code((GDScriptWarning::Code)i);
+		ProjectSettings::get_singleton()->set_setting(warning_setting, (int)GDScriptWarning::WARN);
 	}
 #endif
 
@@ -194,6 +198,9 @@ int GDScriptTestRunner::run_tests() {
 	int failed = 0;
 	for (int i = 0; i < tests.size(); i++) {
 		GDScriptTest test = tests[i];
+		if (print_filenames) {
+			print_line(test.get_source_relative_filepath());
+		}
 		GDScriptTest::TestResult result = test.run_test();
 
 		String expected = FileAccess::get_file_as_string(test.get_output_file());
@@ -225,8 +232,13 @@ bool GDScriptTestRunner::generate_outputs() {
 	}
 
 	for (int i = 0; i < tests.size(); i++) {
-		OS::get_singleton()->print(".");
 		GDScriptTest test = tests[i];
+		if (print_filenames) {
+			print_line(test.get_source_relative_filepath());
+		} else {
+			OS::get_singleton()->print(".");
+		}
+
 		bool result = test.generate_output();
 
 		if (!result) {
@@ -337,30 +349,21 @@ GDScriptTest::GDScriptTest(const String &p_source_path, const String &p_output_p
 
 void GDScriptTestRunner::handle_cmdline() {
 	List<String> cmdline_args = OS::get_singleton()->get_cmdline_args();
-	// TODO: this could likely be ported to use test commands:
-	// https://github.com/godotengine/godot/pull/41355
-	// Currently requires to startup the whole engine, which is slow.
-	String test_cmd = "--gdscript-test";
-	String gen_cmd = "--gdscript-generate-tests";
 
 	for (List<String>::Element *E = cmdline_args.front(); E; E = E->next()) {
 		String &cmd = E->get();
-		if (cmd == test_cmd || cmd == gen_cmd) {
-			if (E->next() == nullptr) {
-				ERR_PRINT("Needed a path for the test files.");
-				exit(-1);
-			}
-
-			const String &path = E->next()->get();
-
-			GDScriptTestRunner runner(path, false);
-			int failed = 0;
-			if (cmd == test_cmd) {
-				failed = runner.run_tests();
+		if (cmd == "--gdscript-generate-tests") {
+			String path;
+			if (E->next()) {
+				path = E->next()->get();
 			} else {
-				bool completed = runner.generate_outputs();
-				failed = completed ? 0 : -1;
+				path = "modules/gdscript/tests/scripts";
 			}
+
+			GDScriptTestRunner runner(path, false, cmdline_args.find("--print-filenames") != nullptr);
+
+			bool completed = runner.generate_outputs();
+			int failed = completed ? 0 : -1;
 			exit(failed);
 		}
 	}
@@ -392,6 +395,9 @@ void GDScriptTest::error_handler(void *p_this, const char *p_function, const cha
 
 	StringBuilder builder;
 	builder.append(">> ");
+	// Only include the function, file and line for script errors, otherwise the
+	// test outputs changes based on the platform/compiler.
+	bool include_source_info = false;
 	switch (p_type) {
 		case ERR_HANDLER_ERROR:
 			builder.append("ERROR");
@@ -401,6 +407,7 @@ void GDScriptTest::error_handler(void *p_this, const char *p_function, const cha
 			break;
 		case ERR_HANDLER_SCRIPT:
 			builder.append("SCRIPT ERROR");
+			include_source_info = true;
 			break;
 		case ERR_HANDLER_SHADER:
 			builder.append("SHADER ERROR");
@@ -410,12 +417,14 @@ void GDScriptTest::error_handler(void *p_this, const char *p_function, const cha
 			break;
 	}
 
-	builder.append("\n>> on function: ");
-	builder.append(String::utf8(p_function));
-	builder.append("()\n>> ");
-	builder.append(String::utf8(p_file).trim_prefix(self->base_dir));
-	builder.append("\n>> ");
-	builder.append(itos(p_line));
+	if (include_source_info) {
+		builder.append("\n>> on function: ");
+		builder.append(String::utf8(p_function));
+		builder.append("()\n>> ");
+		builder.append(String::utf8(p_file).trim_prefix(self->base_dir).replace("\\", "/"));
+		builder.append("\n>> ");
+		builder.append(itos(p_line));
+	}
 	builder.append("\n>> ");
 	builder.append(String::utf8(p_error));
 	if (strlen(p_explanation) > 0) {
@@ -566,6 +575,14 @@ GDScriptTest::TestResult GDScriptTest::execute_test_code(bool p_is_generating) {
 		ERR_FAIL_V_MSG(result, "\nCould not find test function on: '" + source_file + "'");
 	}
 
+	// Setup output handlers.
+	ErrorHandlerData error_data(&result, this);
+
+	_print_handler.userdata = &result;
+	_error_handler.userdata = &error_data;
+	add_print_handler(&_print_handler);
+	add_error_handler(&_error_handler);
+
 	script->reload();
 
 	// Create object instance for test.
@@ -576,14 +593,6 @@ GDScriptTest::TestResult GDScriptTest::execute_test_code(bool p_is_generating) {
 	}
 	obj->set_script(script);
 	GDScriptInstance *instance = static_cast<GDScriptInstance *>(obj->get_script_instance());
-
-	// Setup output handlers.
-	ErrorHandlerData error_data(&result, this);
-
-	_print_handler.userdata = &result;
-	_error_handler.userdata = &error_data;
-	add_print_handler(&_print_handler);
-	add_error_handler(&_error_handler);
 
 	// Call test function.
 	Callable::CallError call_err;

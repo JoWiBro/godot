@@ -128,16 +128,20 @@ using Godot.NativeInterop;
         if (isInnerClass)
         {
             var containingType = symbol.ContainingType;
+            AppendPartialContainingTypeDeclarations(containingType);
 
-            while (containingType != null)
+            void AppendPartialContainingTypeDeclarations(INamedTypeSymbol? containingType)
             {
+                if (containingType == null)
+                    return;
+
+                AppendPartialContainingTypeDeclarations(containingType.ContainingType);
+
                 source.Append("partial ");
                 source.Append(containingType.GetDeclarationKeyword());
                 source.Append(" ");
                 source.Append(containingType.NameWithTypeParameters());
                 source.Append("\n{\n");
-
-                containingType = containingType.ContainingType;
             }
         }
 
@@ -168,7 +172,9 @@ using Godot.NativeInterop;
             {
                 var parameter = callback.Parameters[i];
 
-                source.Append(parameter.ToDisplayString());
+                AppendRefKind(source, parameter.RefKind);
+                source.Append(' ');
+                source.Append(parameter.Type.FullQualifiedNameIncludeGlobal());
                 source.Append(' ');
                 source.Append(parameter.Name);
 
@@ -301,16 +307,20 @@ using Godot.NativeInterop;
         if (isInnerClass)
         {
             var containingType = symbol.ContainingType;
+            AppendPartialContainingTypeDeclarations(containingType);
 
-            while (containingType != null)
+            void AppendPartialContainingTypeDeclarations(INamedTypeSymbol? containingType)
             {
+                if (containingType == null)
+                    return;
+
+                AppendPartialContainingTypeDeclarations(containingType.ContainingType);
+
                 source.Append("partial ");
                 source.Append(containingType.GetDeclarationKeyword());
                 source.Append(" ");
                 source.Append(containingType.NameWithTypeParameters());
                 source.Append("\n{\n");
-
-                containingType = containingType.ContainingType;
             }
         }
 

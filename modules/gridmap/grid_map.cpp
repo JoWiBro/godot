@@ -1,35 +1,36 @@
-/*************************************************************************/
-/*  grid_map.cpp                                                         */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  grid_map.cpp                                                          */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "grid_map.h"
 
+#include "core/core_string_names.h"
 #include "core/io/marshalls.h"
 #include "core/object/message_queue.h"
 #include "scene/3d/light_3d.h"
@@ -258,14 +259,15 @@ RID GridMap::get_navigation_map() const {
 
 void GridMap::set_mesh_library(const Ref<MeshLibrary> &p_mesh_library) {
 	if (!mesh_library.is_null()) {
-		mesh_library->unregister_owner(this);
+		mesh_library->disconnect_changed(callable_mp(this, &GridMap::_recreate_octant_data));
 	}
 	mesh_library = p_mesh_library;
 	if (!mesh_library.is_null()) {
-		mesh_library->register_owner(this);
+		mesh_library->connect_changed(callable_mp(this, &GridMap::_recreate_octant_data));
 	}
 
 	_recreate_octant_data();
+	emit_signal(CoreStringNames::get_singleton()->changed);
 }
 
 Ref<MeshLibrary> GridMap::get_mesh_library() const {
@@ -557,10 +559,14 @@ bool GridMap::_octant_update(const OctantKey &p_key) {
 	}
 
 	//erase navigation
-	for (const KeyValue<IndexKey, Octant::NavigationCell> &E : g.navigation_cell_ids) {
-		NavigationServer3D::get_singleton()->free(E.value.region);
+	for (KeyValue<IndexKey, Octant::NavigationCell> &E : g.navigation_cell_ids) {
+		if (E.value.region.is_valid()) {
+			NavigationServer3D::get_singleton()->free(E.value.region);
+			E.value.region = RID();
+		}
 		if (E.value.navigation_mesh_debug_instance.is_valid()) {
 			RS::get_singleton()->free(E.value.navigation_mesh_debug_instance);
+			E.value.navigation_mesh_debug_instance = RID();
 		}
 	}
 	g.navigation_cell_ids.clear();
@@ -796,6 +802,10 @@ void GridMap::_octant_enter_world(const OctantKey &p_key) {
 }
 
 void GridMap::_octant_exit_world(const OctantKey &p_key) {
+	ERR_FAIL_NULL(RenderingServer::get_singleton());
+	ERR_FAIL_NULL(PhysicsServer3D::get_singleton());
+	ERR_FAIL_NULL(NavigationServer3D::get_singleton());
+
 	ERR_FAIL_COND(!octant_map.has(p_key));
 	Octant &g = *octant_map[p_key];
 	PhysicsServer3D::get_singleton()->body_set_state(g.static_body, PhysicsServer3D::BODY_STATE_TRANSFORM, get_global_transform());
@@ -834,6 +844,10 @@ void GridMap::_octant_exit_world(const OctantKey &p_key) {
 }
 
 void GridMap::_octant_clean_up(const OctantKey &p_key) {
+	ERR_FAIL_NULL(RenderingServer::get_singleton());
+	ERR_FAIL_NULL(PhysicsServer3D::get_singleton());
+	ERR_FAIL_NULL(NavigationServer3D::get_singleton());
+
 	ERR_FAIL_COND(!octant_map.has(p_key));
 	Octant &g = *octant_map[p_key];
 
@@ -893,13 +907,14 @@ void GridMap::_notification(int p_what) {
 			}
 		} break;
 
-#ifdef DEBUG_ENABLED
 		case NOTIFICATION_ENTER_TREE: {
-			if (bake_navigation && NavigationServer3D::get_singleton()->get_debug_enabled()) {
+#ifdef DEBUG_ENABLED
+			if (bake_navigation && NavigationServer3D::get_singleton()->get_debug_navigation_enabled()) {
 				_update_navigation_debug_edge_connections();
 			}
-		} break;
 #endif // DEBUG_ENABLED
+			_update_visibility();
+		} break;
 
 		case NOTIFICATION_TRANSFORM_CHANGED: {
 			Transform3D new_xform = get_global_transform();
@@ -993,9 +1008,10 @@ void GridMap::clear() {
 	clear_baked_meshes();
 }
 
+#ifndef DISABLE_DEPRECATED
 void GridMap::resource_changed(const Ref<Resource> &p_res) {
-	_recreate_octant_data();
 }
+#endif
 
 void GridMap::_update_octants_callback() {
 	if (!awaiting_update) {
@@ -1067,7 +1083,9 @@ void GridMap::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("map_to_local", "map_position"), &GridMap::map_to_local);
 
 	ClassDB::bind_method(D_METHOD("_update_octants_callback"), &GridMap::_update_octants_callback);
+#ifndef DISABLE_DEPRECATED
 	ClassDB::bind_method(D_METHOD("resource_changed", "resource"), &GridMap::resource_changed);
+#endif
 
 	ClassDB::bind_method(D_METHOD("set_center_x", "enable"), &GridMap::set_center_x);
 	ClassDB::bind_method(D_METHOD("get_center_x"), &GridMap::get_center_x);
@@ -1107,6 +1125,7 @@ void GridMap::_bind_methods() {
 	BIND_CONSTANT(INVALID_CELL_ITEM);
 
 	ADD_SIGNAL(MethodInfo("cell_size_changed", PropertyInfo(Variant::VECTOR3, "cell_size")));
+	ADD_SIGNAL(MethodInfo(CoreStringNames::get_singleton()->changed));
 }
 
 void GridMap::set_cell_scale(float p_scale) {
@@ -1186,6 +1205,7 @@ Vector3 GridMap::_get_offset() const {
 }
 
 void GridMap::clear_baked_meshes() {
+	ERR_FAIL_NULL(RenderingServer::get_singleton());
 	for (int i = 0; i < baked_meshes.size(); i++) {
 		RS::get_singleton()->free(baked_meshes[i].instance);
 	}
@@ -1301,8 +1321,8 @@ RID GridMap::get_bake_mesh_instance(int p_idx) {
 GridMap::GridMap() {
 	set_notify_transform(true);
 #ifdef DEBUG_ENABLED
-	NavigationServer3D::get_singleton_mut()->connect("map_changed", callable_mp(this, &GridMap::_navigation_map_changed));
-	NavigationServer3D::get_singleton_mut()->connect("navigation_debug_changed", callable_mp(this, &GridMap::_update_navigation_debug_edge_connections));
+	NavigationServer3D::get_singleton()->connect("map_changed", callable_mp(this, &GridMap::_navigation_map_changed));
+	NavigationServer3D::get_singleton()->connect("navigation_debug_changed", callable_mp(this, &GridMap::_update_navigation_debug_edge_connections));
 #endif // DEBUG_ENABLED
 }
 
@@ -1323,14 +1343,10 @@ void GridMap::_navigation_map_changed(RID p_map) {
 #endif // DEBUG_ENABLED
 
 GridMap::~GridMap() {
-	if (!mesh_library.is_null()) {
-		mesh_library->unregister_owner(this);
-	}
-
 	clear();
 #ifdef DEBUG_ENABLED
-	NavigationServer3D::get_singleton_mut()->disconnect("map_changed", callable_mp(this, &GridMap::_navigation_map_changed));
-	NavigationServer3D::get_singleton_mut()->disconnect("navigation_debug_changed", callable_mp(this, &GridMap::_update_navigation_debug_edge_connections));
+	NavigationServer3D::get_singleton()->disconnect("map_changed", callable_mp(this, &GridMap::_navigation_map_changed));
+	NavigationServer3D::get_singleton()->disconnect("navigation_debug_changed", callable_mp(this, &GridMap::_update_navigation_debug_edge_connections));
 #endif // DEBUG_ENABLED
 }
 
@@ -1339,7 +1355,7 @@ void GridMap::_update_octant_navigation_debug_edge_connections_mesh(const Octant
 	ERR_FAIL_COND(!octant_map.has(p_key));
 	Octant &g = *octant_map[p_key];
 
-	if (!NavigationServer3D::get_singleton()->get_debug_enabled()) {
+	if (!NavigationServer3D::get_singleton()->get_debug_navigation_enabled()) {
 		if (g.navigation_debug_edge_connections_instance.is_valid()) {
 			RS::get_singleton()->instance_set_visible(g.navigation_debug_edge_connections_instance, false);
 		}
@@ -1412,7 +1428,7 @@ void GridMap::_update_octant_navigation_debug_edge_connections_mesh(const Octant
 		return;
 	}
 
-	Ref<StandardMaterial3D> edge_connections_material = NavigationServer3D::get_singleton_mut()->get_debug_navigation_edge_connections_material();
+	Ref<StandardMaterial3D> edge_connections_material = NavigationServer3D::get_singleton()->get_debug_navigation_edge_connections_material();
 
 	Array mesh_array;
 	mesh_array.resize(Mesh::ARRAY_MAX);
